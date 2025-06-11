@@ -1,0 +1,168 @@
+import { randomUUID } from "crypto";
+import { FastifyInstance } from "fastify";
+import { Collection, ObjectId } from "mongodb";
+import {
+  IActivity,
+  IActivityResponse,
+  ICreateActivity,
+  IUpdateActivity,
+} from "../interfaces/activity";
+
+
+export interface IActivityRepository {
+  getAll(): Promise<IActivityResponse[]>;
+  getByUuid(uuid: string): Promise<IActivityResponse | null>;
+  getByCategory(categoryId: string): Promise<IActivityResponse[]>;
+  getByName(name: string): Promise<IActivityResponse[]>;
+  getByDate(date: string): Promise<IActivityResponse[]>;
+  getByInterest(interest: string): Promise<IActivityResponse[]>;
+  create(activity: ICreateActivity): Promise<IActivityResponse>;
+  update(
+    uuid: string,
+    activity: Partial<IUpdateActivity>
+  ): Promise<IActivityResponse | null>;
+  delete(uuid: string): Promise<boolean>;
+}
+
+export class ActivityRepository implements IActivityRepository {
+  private collection: Collection<IActivity>;
+
+  constructor(fastify: FastifyInstance) {
+    if (!fastify.mongo.db) {
+      throw new Error("Database connection not available");
+    }
+    this.collection = fastify.mongo.db?.collection<IActivity>("activities");
+  }
+
+  async getAll(): Promise<IActivityResponse[]> {
+    const results = await this.collection
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
+  }
+
+  async getByUuid(uuid: string): Promise<IActivityResponse | null> {
+    const result = await this.collection.findOne({ uuid });
+
+    if (!result) return null;
+
+    return {
+      ...result,
+      _id: result._id.toString(),
+    } as IActivityResponse;
+  }
+
+  async getByCategory(categoryId: string): Promise<IActivityResponse[]> {
+    if (!ObjectId.isValid(categoryId)) return [];
+
+    const results = await this.collection
+      .find({ categoryId: { $regex: categoryId, $options: "i" } })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
+  }
+
+  async getByName(name: string): Promise<IActivityResponse[]> {
+    const results = await this.collection
+      .find({
+        $or: [
+          { name: { $regex: name, $options: "i" } },
+          { description: { $regex: name, $options: "i" } },
+        ],
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
+  }
+
+  async getByDate(date: string): Promise<IActivityResponse[]> {
+    const results = await this.collection
+      .find({ date })
+      .sort({ startTime: 1 })
+      .toArray();
+
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
+  }
+
+  async getByInterest(interest: string): Promise<IActivityResponse[]> {
+    const results = await this.collection
+      .find({
+        $or: [
+          { name: { $regex: interest, $options: "i" } },
+          { description: { $regex: interest, $options: "i" } },
+        ],
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
+  }
+
+  async create(activity: ICreateActivity): Promise<IActivityResponse> {
+    const activityData = {
+      ...activity,
+      uuid: randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await this.collection?.insertOne(activityData);
+
+    if (!result || !result.acknowledged) {
+      throw new Error("Failed to create activity");
+    }
+
+    return {
+      _id: result.insertedId.toString(),
+      ...activityData,
+    };
+  }
+
+  async update(
+    uuid: string,
+    updateData: Partial<IUpdateActivity>
+  ): Promise<IActivityResponse | null> {
+    const updateFields = {
+      ...updateData,
+      updatedAt: new Date(),
+    };
+
+    const result = await this.collection.findOneAndUpdate(
+      { uuid },
+      { $set: updateFields },
+      { returnDocument: "after" }
+    );
+
+    if (!result.value) {
+      return null;
+    }
+
+    return {
+      ...result.value,
+      _id: result.value._id.toString(),
+    } as IActivityResponse;
+  }
+
+  async delete(uuid: string): Promise<boolean> {
+    const result = await this.collection.deleteOne({ uuid });
+    return result.deletedCount > 0;
+  }
+}

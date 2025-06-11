@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: agropec
+
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./src/mongo-data:/data/db 
