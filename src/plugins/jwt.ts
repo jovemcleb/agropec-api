@@ -15,12 +15,6 @@ export const jwt = fp(
       "authenticate",
       async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-          console.log("🔍 Headers recebidos:", request.headers);
-          console.log(
-            "🔑 Authorization header:",
-            request.headers.authorization
-          );
-
           await request.jwtVerify();
         } catch (err) {
           console.log("❌ Erro na verificação JWT:", err);

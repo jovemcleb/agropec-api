@@ -2,31 +2,31 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { CompanyController } from "../controllers/CompanyController";
 import {
   CreateCompanySchema,
+  ICreateCompany,
   IUpdateCompany,
   UpdateCompanySchema,
 } from "../interfaces/company";
-import { z } from "zod";
-
-type UpdateCompanyBody = z.infer<typeof UpdateCompanySchema>;
 
 export const companiesRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
   const companyController = new CompanyController(fastify.repositories.company);
 
-  fastify.post(
+  fastify.post<{ Body: ICreateCompany }>(
     "/companies",
     {
-      preHandler: fastify.validateSchema({
-        body: CreateCompanySchema,
-      }),
+      preHandler: [
+        fastify.authenticate,
+        fastify.validateSchema({
+          body: CreateCompanySchema,
+        }),
+      ],
     },
     companyController.create.bind(companyController)
   );
+
   fastify.get("/companies", companyController.findAll.bind(companyController));
-  fastify.put<{ Body: IUpdateCompany;
-     Params: { uuid: string } 
-  }>(
+  fastify.put<{ Body: IUpdateCompany; Params: { uuid: string } }>(
     "/companies/:uuid",
     {
       preHandler: [
@@ -36,8 +36,11 @@ export const companiesRoutes: FastifyPluginAsync = async (
     },
     companyController.update.bind(companyController)
   );
-  fastify.delete(
+  fastify.delete<{ Params: { uuid: string } }>(
     "/companies/:uuid",
+    {
+      preHandler: fastify.authenticate,
+    },
     companyController.delete.bind(companyController)
   );
 };
