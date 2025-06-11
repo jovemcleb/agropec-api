@@ -1,19 +1,16 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { ICreateCategory } from "../interfaces/category";
 import { CategoryRepository } from "../repositories/CategoryRepository";
 import { createCategory } from "../useCases/categories/createCategory";
 import { deleteCategory } from "../useCases/categories/deleteCategory";
 import { findAllCategories } from "../useCases/categories/findAllCategories";
 import { updateCategory } from "../useCases/categories/updateCategory";
 
-interface CategoryRequestBody {
-  name: string;
-}
-
 export class CategoryController {
   constructor(private categoryRepository: CategoryRepository) {}
 
   async create(
-    request: FastifyRequest<{ Body: CategoryRequestBody }>,
+    request: FastifyRequest<{ Body: ICreateCategory }>,
     reply: FastifyReply
   ) {
     try {
@@ -47,7 +44,7 @@ export class CategoryController {
 
   async update(
     request: FastifyRequest<{
-      Body: CategoryRequestBody;
+      Body: ICreateCategory;
       Params: { uuid: string };
     }>,
     reply: FastifyReply

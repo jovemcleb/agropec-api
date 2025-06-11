@@ -60,11 +60,6 @@ export class CompanyController {
     try {
       const adminLogado = request.user as AdminLogado;
 
-      console.log("👤 Admin que está fazendo a alteração:", adminLogado);
-      console.log("📧 Email do admin:", adminLogado.email);
-      console.log("🔑 Role do admin:", adminLogado.role);
-      console.log("🆔 UUID do admin:", adminLogado.uuid);
-
       if (adminLogado.role !== "admin") {
         return reply.status(403).send({
           error: "Apenas admins podem atualizar companies",

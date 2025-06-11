@@ -18,23 +18,16 @@ export async function updateCompany(
   }
 
   const updateData: Partial<ICompany> = {
+    ...(name && { name }),
+    ...(description && { description }),
     updatedBy,
     updatedAt: new Date(),
   };
-
-  if (name !== undefined) {
-    updateData.name = name;
-  }
-
-  if (description !== undefined) {
-    updateData.description = description;
-  }
 
   const updatedCompany = await companyRepository.update(uuid, updateData);
 
   if (!updatedCompany) {
     throw new Error("Failed to update company");
   }
-
   return updatedCompany;
 }

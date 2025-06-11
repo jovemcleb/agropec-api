@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { adminRoutes } from "./admin";
-import { categoriesRoutes } from "./categories.";
+import { categoriesRoutes } from "./categories";
 import { companiesRoutes } from "./companies";
 import { standRoutes } from "./stands";
 import { usersRoutes } from "./users";
