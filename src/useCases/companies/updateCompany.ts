@@ -2,14 +2,13 @@ import { ICompany, IUpdateCompany } from "../../interfaces/company";
 import { CompanyRepository } from "../../repositories/CompanyRepository";
 interface UpdateCompanyPayload extends IUpdateCompany {
   uuid: string;
-  updatedBy: string;
 }
 
 export async function updateCompany(
   payload: UpdateCompanyPayload,
   companyRepository: CompanyRepository
 ) {
-  const { uuid, name, description, updatedBy } = payload;
+  const { uuid, name, description } = payload;
 
   const companyExists = await companyRepository.findByUuid(uuid);
 
@@ -20,8 +19,6 @@ export async function updateCompany(
   const updateData: Partial<ICompany> = {
     ...(name && { name }),
     ...(description && { description }),
-    updatedBy,
-    updatedAt: new Date(),
   };
 
   const updatedCompany = await companyRepository.update(uuid, updateData);

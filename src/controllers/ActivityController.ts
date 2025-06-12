@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { IActivity, ICreateActivity, IUpdateActivity } from "../interfaces/activity";
-import { handleError } from "../utils/formatter-activity";
+import { ICreateActivity, IUpdateActivity } from "../interfaces/activity";
 import { getAllActivities } from "../useCases/activities/getAllActivities";
 import { getActivityByUuid } from "../useCases/activities/getActivityByUuid";
 import { getActivitiesByCategory } from "../useCases/activities/getActivitiesByCategory";
@@ -10,45 +9,18 @@ import { getActivitiesByInterest } from "../useCases/activities/getActivitiesByI
 import { createActivity } from "../useCases/activities/createActivity";
 import { updateActivity } from "../useCases/activities/updateActivity";
 import { deleteActivity } from "../useCases/activities/deleteActivity";
-import { ActivityRepository, IActivityRepository } from "../repositories/ActivityRepository";
-
-interface ActivityParamsById {
-  id: string;
-}
-
-interface ActivityParamsByUuid {
-  uuid: string;
-}
-
-interface ActivityParamsByCategory {
-  categoryId: string;
-}
-
-interface ActivityParamsByDate {
-  date: string;
-}
-
-interface ActivitySearchQuery {
-  name: string;
-}
-
-interface ActivityInterestQuery {
-  interest: string;
-}
+import { ActivityRepository } from "../repositories/ActivityRepository";
 
 export class ActivityController {
-
   private activityRepository: ActivityRepository;
 
   constructor(activityRepository: ActivityRepository) {
     this.activityRepository = activityRepository;
   }
 
-async getAllActivities(request: FastifyRequest, reply: FastifyReply) {
+  async getAllActivities(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const activities = await getAllActivities(
-        this.activityRepository
-      );
+      const activities = await getAllActivities(this.activityRepository);
 
       reply.status(200).send({
         success: true,
@@ -64,18 +36,13 @@ async getAllActivities(request: FastifyRequest, reply: FastifyReply) {
     }
   }
 
-
-
-async getActivityByUuid(
-    request: FastifyRequest<{ Params: ActivityParamsByUuid }>,
+  async getActivityByUuid(
+    request: FastifyRequest<{ Params: { uuid: string } }>,
     reply: FastifyReply
   ) {
     try {
       const { uuid } = request.params;
-      const activity = await getActivityByUuid(
-        uuid,
-        this.activityRepository
-      );
+      const activity = await getActivityByUuid(uuid, this.activityRepository);
 
       if (!activity) {
         reply.status(404).send({
@@ -98,8 +65,8 @@ async getActivityByUuid(
       }
     }
   }
-async getActivitiesByCategory(
-    request: FastifyRequest<{ Params: ActivityParamsByCategory }>,
+  async getActivitiesByCategory(
+    request: FastifyRequest<{ Params: { categoryId: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -122,8 +89,8 @@ async getActivitiesByCategory(
       }
     }
   }
-async getActivitiesByName(
-    request: FastifyRequest<{ Querystring: ActivitySearchQuery }>,
+  async getActivitiesByName(
+    request: FastifyRequest<{ Querystring: { name: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -154,8 +121,8 @@ async getActivitiesByName(
       }
     }
   }
-async getActivitiesByDate(
-    request: FastifyRequest<{ Params: ActivityParamsByDate }>,
+  async getActivitiesByDate(
+    request: FastifyRequest<{ Params: { date: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -178,8 +145,8 @@ async getActivitiesByDate(
       }
     }
   }
-async getActivitiesByInterest(
-    request: FastifyRequest<{ Querystring: ActivityInterestQuery }>,
+  async getActivitiesByInterest(
+    request: FastifyRequest<{ Querystring: { interest: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -212,13 +179,16 @@ async getActivitiesByInterest(
     }
   }
 
-async createActivity(
+  async createActivity(
     request: FastifyRequest<{ Body: ICreateActivity }>,
     reply: FastifyReply
   ) {
     try {
       const activityData = request.body;
-      const createdActivity = await createActivity(activityData, this.activityRepository);
+      const createdActivity = await createActivity(
+        activityData,
+        this.activityRepository
+      );
 
       reply.status(201).send({
         success: true,
@@ -234,18 +204,22 @@ async createActivity(
     }
   }
 
-async updateActivity(
-    request: FastifyRequest<{ 
-      Params: ActivityParamsByUuid; 
-      Body: Partial<IUpdateActivity> 
+  async updateActivity(
+    request: FastifyRequest<{
+      Body: IUpdateActivity;
+      Params: { uuid: string };
     }>,
     reply: FastifyReply
   ) {
     try {
       const { uuid } = request.params;
-      const updateData = request.body as IUpdateActivity;
+      const updateData = request.body;
 
-      const updatedActivity = await updateActivity(uuid, updateData, this.activityRepository);
+      const updatedActivity = await updateActivity(
+        uuid,
+        updateData,
+        this.activityRepository
+      );
 
       if (!updatedActivity) {
         reply.status(404).send({
@@ -269,8 +243,8 @@ async updateActivity(
     }
   }
 
-async deleteActivity(
-    request: FastifyRequest<{ Params: ActivityParamsByUuid }>,
+  async deleteActivity(
+    request: FastifyRequest<{ Params: { uuid: string } }>,
     reply: FastifyReply
   ) {
     try {

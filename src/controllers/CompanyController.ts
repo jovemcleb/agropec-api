@@ -58,20 +58,11 @@ export class CompanyController {
     reply: FastifyReply
   ) {
     try {
-      const adminLogado = request.user as AdminLogado;
-
-      if (adminLogado.role !== "admin") {
-        return reply.status(403).send({
-          error: "Apenas admins podem atualizar companies",
-        });
-      }
-
       const { uuid } = request.params;
       const { name, description } = request.body;
 
       const updatePayload = {
         uuid,
-        updatedBy: adminLogado.uuid,
         name,
         description,
       };
