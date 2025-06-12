@@ -8,7 +8,6 @@ import {
   IUpdateActivity,
 } from "../interfaces/activity";
 
-
 export interface IActivityRepository {
   getAll(): Promise<IActivityResponse[]>;
   getByUuid(uuid: string): Promise<IActivityResponse | null>;
@@ -20,7 +19,7 @@ export interface IActivityRepository {
   update(
     uuid: string,
     activity: Partial<IUpdateActivity>
-  ): Promise<IActivityResponse | null>;
+  ): Promise<IActivity | null>;
   delete(uuid: string): Promise<boolean>;
 }
 
@@ -139,7 +138,7 @@ export class ActivityRepository implements IActivityRepository {
   async update(
     uuid: string,
     updateData: Partial<IUpdateActivity>
-  ): Promise<IActivityResponse | null> {
+  ): Promise<IActivity | null> {
     const updateFields = {
       ...updateData,
       updatedAt: new Date(),
@@ -151,14 +150,11 @@ export class ActivityRepository implements IActivityRepository {
       { returnDocument: "after" }
     );
 
-    if (!result.value) {
+    if (!result) {
       return null;
     }
 
-    return {
-      ...result.value,
-      _id: result.value._id.toString(),
-    } as IActivityResponse;
+    return result;
   }
 
   async delete(uuid: string): Promise<boolean> {

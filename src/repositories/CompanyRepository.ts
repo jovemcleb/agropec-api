@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { ICompany, ICompanyResponse } from "../interfaces/company";
+import { ICompany, IUpdateCompany } from "../interfaces/company";
 
 export class CompanyRepository {
   private collection;
@@ -31,7 +31,7 @@ export class CompanyRepository {
     return companies;
   }
 
-  async findByName(name: string): Promise<ICompanyResponse | null> {
+  async findByName(name: string): Promise<ICompany | null> {
     const company = await this.collection?.findOne({
       name: { $regex: new RegExp(`^${name}$`, "i") },
     });
@@ -40,12 +40,7 @@ export class CompanyRepository {
       return null;
     }
 
-    return {
-      _id: company._id.toString(),
-      uuid: company.uuid,
-      name: company.name,
-      description: company.description,
-    };
+    return company;
   }
 
   async findByUuid(uuid: string) {
@@ -54,12 +49,10 @@ export class CompanyRepository {
     return company;
   }
 
-  async update(uuid: string, company: Partial<ICompany>) {
- 
-
+  async update(uuid: string, company: IUpdateCompany) {
     const updatedCompany = await this.collection?.findOneAndUpdate(
       { uuid },
-     { $set: { ...company, updatedAt: new Date() } },
+      { $set: { ...company, updatedAt: new Date() } },
       { returnDocument: "after" }
     );
 

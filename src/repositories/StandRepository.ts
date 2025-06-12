@@ -1,7 +1,12 @@
-import { Collection } from "mongodb";
-import { ICreateStand, IStand, IStandResponse, IUpdateStand } from "../interfaces/stand";
-import { FastifyInstance } from "fastify";
 import { randomUUID } from "crypto";
+import { FastifyInstance } from "fastify";
+import { Collection } from "mongodb";
+import {
+  ICreateStand,
+  IStand,
+  IStandResponse,
+  IUpdateStand,
+} from "../interfaces/stand";
 
 export interface IStandRepository {
   getAll(): Promise<IStandResponse[]>;
@@ -94,7 +99,7 @@ export class StandRepository {
       _id: doc._id.toString(),
     })) as IStandResponse[];
   }
-    async create(stand: ICreateStand): Promise<IStandResponse> {
+  async create(stand: ICreateStand): Promise<IStandResponse> {
     const standData = {
       ...stand,
       uuid: randomUUID(),
@@ -113,31 +118,26 @@ export class StandRepository {
       ...standData,
     };
   }
-  async update(uuid: string, standData: IUpdateStand): Promise<IStandResponse | null> {
-  const updateData = {
-    ...standData,
-    updatedAt: new Date(),
-  };
+  async update(uuid: string, standData: IUpdateStand): Promise<IStand | null> {
+    const updateData = {
+      ...standData,
+      updatedAt: new Date(),
+    };
 
-  const result = await this.collection.findOneAndUpdate(
-    { uuid },
-    { $set: updateData },
-    { returnDocument: 'after' }
-  );
+    const result = await this.collection.findOneAndUpdate(
+      { uuid },
+      { $set: updateData },
+      { returnDocument: "after" }
+    );
 
-  if (!result.value) {
-    return null;
+    if (!result) {
+      return null;
+    }
+
+    return result;
   }
-
-  return {
-    ...result.value,
-    _id: result.value._id.toString(),
-  } as IStandResponse;
-}
-async delete(uuid: string): Promise<boolean> {
-  const result = await this.collection.deleteOne({ uuid });
-  return result.deletedCount > 0;
-}
-  
-
+  async delete(uuid: string): Promise<boolean> {
+    const result = await this.collection.deleteOne({ uuid });
+    return result.deletedCount > 0;
+  }
 }
