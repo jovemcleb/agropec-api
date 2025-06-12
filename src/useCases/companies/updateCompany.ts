@@ -16,9 +16,10 @@ export async function updateCompany(
     throw new Error("Company not found");
   }
 
-  const updateData: Partial<ICompany> = {
-    ...(name && { name }),
-    ...(description && { description }),
+  const updateData = {
+    name,
+    description,
+    updatedAt: new Date(),
   };
 
   const updatedCompany = await companyRepository.update(uuid, updateData);

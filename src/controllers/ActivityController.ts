@@ -1,5 +1,10 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { ICreateActivity, IUpdateActivity } from "../interfaces/activity";
+import {
+  IActivity,
+  IActivityResponse,
+  ICreateActivity,
+  IUpdateActivity,
+} from "../interfaces/activity";
 import { getAllActivities } from "../useCases/activities/getAllActivities";
 import { getActivityByUuid } from "../useCases/activities/getActivityByUuid";
 import { getActivitiesByCategory } from "../useCases/activities/getActivitiesByCategory";
@@ -215,11 +220,11 @@ export class ActivityController {
       const { uuid } = request.params;
       const updateData = request.body;
 
-      const updatedActivity = await updateActivity(
+      const updatedActivity = (await updateActivity(
         uuid,
         updateData,
         this.activityRepository
-      );
+      )) as IActivityResponse;
 
       if (!updatedActivity) {
         reply.status(404).send({

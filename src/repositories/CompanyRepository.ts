@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { ICompany, ICompanyResponse } from "../interfaces/company";
+import { ICompany, ICompanyResponse, IUpdateCompany } from "../interfaces/company";
 
 export class CompanyRepository {
   private collection;
@@ -54,7 +54,7 @@ export class CompanyRepository {
     return company;
   }
 
-  async update(uuid: string, company: Partial<ICompany>) {
+  async update(uuid: string, company: Partial<IUpdateCompany>) {
  
 
     const updatedCompany = await this.collection?.findOneAndUpdate(

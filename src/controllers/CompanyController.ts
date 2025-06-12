@@ -69,7 +69,7 @@ export class CompanyController {
 
       const updatedCompany = await updateCompany(
         updatePayload,
-        this.companyRepository
+        this.companyRepository //~pq aqui não dá erro igual o controller de atividades? 
       );
 
       reply.status(200).send(updatedCompany);
