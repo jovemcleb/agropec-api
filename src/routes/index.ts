@@ -6,6 +6,7 @@ import { standRoutes } from "./stands";
 import { usersRoutes } from "./users";
 import { activityRoutes } from "./activities";
 import { validationPlugin } from "../plugins/validation";
+import { notificationsRoutes } from "./notifications";
 
 export const routes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(validationPlugin);
@@ -15,4 +16,5 @@ export const routes: FastifyPluginAsync = async (fastify) => {
   fastify.register(usersRoutes);
   fastify.register(standRoutes);
   fastify.register(activityRoutes);
+  fastify.register(notificationsRoutes)
 };

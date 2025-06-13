@@ -5,11 +5,7 @@ import { createCompany } from "../useCases/companies/createCompany";
 import { deleteCompany } from "../useCases/companies/deleteCompany";
 import { findAllCompanies } from "../useCases/companies/findAllCompanies";
 import { updateCompany } from "../useCases/companies/updateCompany";
-interface AdminLogado {
-  uuid: string;
-  email: string;
-  role: string;
-}
+
 
 export class CompanyController {
   constructor(private companyRepository: CompanyRepository) {}
