@@ -223,11 +223,33 @@ export class StandController {
   ) {
     try {
       const { uuid } = request.params;
-      const standData = request.body;
+      const {
+        categoryId,
+        companyId,
+        date,
+        description,
+        imageUrl,
+        latitude,
+        longitude,
+        name,
+        openingHours,
+      } = request.body;
 
+      const updateData = {
+        categoryId,
+        companyId,
+        date,
+        description,
+        imageUrl,
+        latitude,
+        longitude,
+        name,
+        openingHours,
+        uuid,
+      };
       const updatedStand = await updateStand(
         uuid,
-        standData,
+        updateData,
         this.standRepository
       );
 

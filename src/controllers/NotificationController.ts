@@ -71,13 +71,23 @@ export class NotificationController {
   ) {
     try {
       const { uuid } = request.params;
-      const updateData = request.body;
+      const { activityId, date, message, standId, time, userId } = request.body;
 
-      const updatedNotification = (await updateNotification(
+      const updateData = {
+        uuid, // ficar de olho
+        activityId,
+        date,
+        message,
+        standId,
+        time,
+        userId,
+      };
+
+      const updatedNotification = await updateNotification(
         uuid,
         updateData,
         this.notificationRepository
-      )) as INotificationResponse;
+      );
 
       if (!updatedNotification) {
         reply.status(404).send({

@@ -1,5 +1,10 @@
 import { Collection } from "mongodb";
-import { ICreateStand, IStand, IStandResponse, IUpdateStand } from "../interfaces/stand";
+import {
+  ICreateStand,
+  IStand,
+  IStandResponse,
+  IUpdateStand,
+} from "../interfaces/stand";
 import { FastifyInstance } from "fastify";
 import { randomUUID } from "crypto";
 
@@ -11,7 +16,7 @@ export interface IStandRepository {
   getByUuid(uuid: string): Promise<IStandResponse | null>;
   getByDate(date: Date): Promise<IStandResponse[]>;
   getByInterest(interest: string): Promise<IStandResponse[]>;
-  update(uuid: string, standData: IUpdateStand): Promise<IStandResponse | null>;
+  update(uuid: string, stand: Partial<IUpdateStand>): Promise<IStand | null>;
   delete(uuid: string): Promise<boolean>;
 }
 export class StandRepository {
@@ -94,7 +99,7 @@ export class StandRepository {
       _id: doc._id.toString(),
     })) as IStandResponse[];
   }
-    async create(stand: ICreateStand): Promise<IStandResponse> {
+  async create(stand: ICreateStand): Promise<IStandResponse> {
     const standData = {
       ...stand,
       uuid: randomUUID(),
@@ -113,31 +118,21 @@ export class StandRepository {
       ...standData,
     };
   }
-  async update(uuid: string, standData: IUpdateStand): Promise<IStandResponse | null> {
-  const updateData = {
-    ...standData,
-    updatedAt: new Date(),
-  };
+  async update(uuid: string, updateData: Partial<IUpdateStand>) {
+    const result = await this.collection.findOneAndUpdate(
+      { uuid },
+      { $set: { ...updateData, updatedAt: new Date() } },
+      { returnDocument: "after" }
+    );
 
-  const result = await this.collection.findOneAndUpdate(
-    { uuid },
-    { $set: updateData },
-    { returnDocument: 'after' }
-  );
+    if (!result) {
+      return null;
+    }
 
-  if (!result.value) {
-    return null;
+    return result;
   }
-
-  return {
-    ...result.value,
-    _id: result.value._id.toString(),
-  } as IStandResponse;
-}
-async delete(uuid: string): Promise<boolean> {
-  const result = await this.collection.deleteOne({ uuid });
-  return result.deletedCount > 0;
-}
-  
-
+  async delete(uuid: string): Promise<boolean> {
+    const result = await this.collection.deleteOne({ uuid });
+    return result.deletedCount > 0;
+  }
 }

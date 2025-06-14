@@ -1,6 +1,16 @@
 import { FastifyInstance } from "fastify";
-import { ICompany, ICompanyResponse, IUpdateCompany } from "../interfaces/company";
+import {
+  ICompany,
+  ICompanyResponse,
+  IUpdateCompany,
+} from "../interfaces/company";
 
+export interface ICompanyRepository {
+ update(
+  uuid: string,
+  company: Partial<IUpdateCompany>
+ ) : Promise<ICompany | null>;
+}
 export class CompanyRepository {
   private collection;
 
@@ -55,11 +65,9 @@ export class CompanyRepository {
   }
 
   async update(uuid: string, company: Partial<IUpdateCompany>) {
- 
-
     const updatedCompany = await this.collection?.findOneAndUpdate(
       { uuid },
-     { $set: { ...company, updatedAt: new Date() } },
+      { $set: { ...company, updatedAt: new Date() } },
       { returnDocument: "after" }
     );
 

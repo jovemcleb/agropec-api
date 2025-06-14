@@ -218,13 +218,37 @@ export class ActivityController {
   ) {
     try {
       const { uuid } = request.params;
-      const updateData = request.body;
+      const {
+        name,
+        description,
+        categoryId,
+        companyId,
+        latitude,
+        longitude,
+        date,
+        imageUrl,
+        endTime,
+        startTime,
+      } = request.body;
 
-      const updatedActivity = (await updateActivity(
+      const updateData = {
+        uuid, // ficar de olho nesse uuid, ja que ja passamos o params, porém tava dando erro sem ele
+        name,
+        description,
+        categoryId,
+        companyId,
+        latitude,
+        longitude,
+        date,
+        imageUrl,
+        endTime,
+        startTime,
+      } 
+      const updatedActivity = await updateActivity(
         uuid,
         updateData,
         this.activityRepository
-      )) as IActivityResponse;
+      );
 
       if (!updatedActivity) {
         reply.status(404).send({

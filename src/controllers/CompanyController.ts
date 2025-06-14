@@ -8,7 +8,10 @@ import { updateCompany } from "../useCases/companies/updateCompany";
 
 
 export class CompanyController {
-  constructor(private companyRepository: CompanyRepository) {}
+  private companyRepository: CompanyRepository
+  constructor(companyRepository: CompanyRepository) {
+    this.companyRepository = companyRepository;
+  }
 
   async create(
     request: FastifyRequest<{ Body: ICreateCompany }>,
@@ -57,16 +60,17 @@ export class CompanyController {
       const { uuid } = request.params;
       const { name, description } = request.body;
 
-      const updatePayload = {
+      const updateData = {
         uuid,
         name,
-        description,
+        description, 
       };
 
-      const updatedCompany = await updateCompany(
-        updatePayload,
-        this.companyRepository //~pq aqui não dá erro igual o controller de atividades? 
-      );
+      const updatedCompany = (await updateCompany(
+        uuid,
+        updateData,
+        this.companyRepository 
+      ));
 
       reply.status(200).send(updatedCompany);
     } catch (error) {

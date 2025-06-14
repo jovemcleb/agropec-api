@@ -1,7 +1,5 @@
 import {
-  IActivityResponse,
   IUpdateActivity,
-  UpdateActivitySchema,
 } from "../../interfaces/activity";
 import { IActivityRepository } from "../../repositories/ActivityRepository";
 import { handleError } from "../../utils/formatter-activity";
