@@ -19,10 +19,11 @@ declare module "fastify" {
       company: CompanyRepository;
       stand: StandRepository;
       admin: AdminRepository;
+      user: UserRepository;
     };
-     validateSchema: (
+    validateSchema: (
       schemas: ValidationSchemas
-    ) => (request: any, reply: any) => Promise<void>;
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
