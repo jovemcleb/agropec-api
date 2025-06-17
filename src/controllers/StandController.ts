@@ -10,29 +10,6 @@ import { getStandsByDate } from "../useCases/stands/getStandsByDate";
 import { getStandsByInterest } from "../useCases/stands/getStandsByInterest";
 import { deleteStand } from "../useCases/stands/deleteStand";
 import { updateStand } from "../useCases/stands/updateStand";
-interface StandParamsByCategory {
-  category: string;
-}
-
-interface StandParamsByName {
-  name: string;
-}
-
-interface StandParamsByUuid {
-  uuid: string;
-}
-
-interface StandParamsByDate {
-  date: string;
-}
-
-interface StandParamsByInterest {
-  interest: string;
-}
-
-interface StandSearchQuery {
-  name?: string;
-}
 
 export class StandController {
   private standRepository: StandRepository;
@@ -60,7 +37,7 @@ export class StandController {
   }
 
   async getStandsByCategory(
-    request: FastifyRequest<{ Params: StandParamsByCategory }>,
+    request: FastifyRequest<{ Params: { category: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -91,7 +68,7 @@ export class StandController {
   }
 
   async getStandByName(
-    request: FastifyRequest<{ Params: StandParamsByName }>,
+    request: FastifyRequest<{ Params: { name: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -130,7 +107,7 @@ export class StandController {
   }
 
   async getStandByUuid(
-    request: FastifyRequest<{ Params: StandParamsByUuid }>,
+    request: FastifyRequest<{ Params: { uuid: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -169,7 +146,7 @@ export class StandController {
   }
 
   async getStandsByDate(
-    request: FastifyRequest<{ Params: StandParamsByDate }>,
+    request: FastifyRequest<{ Params: { date: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -190,7 +167,7 @@ export class StandController {
     }
   }
   async getStandsByInterest(
-    request: FastifyRequest<{ Params: StandParamsByInterest }>,
+    request: FastifyRequest<{ Params: { interest: string } }>,
     reply: FastifyReply
   ) {
     try {
@@ -219,9 +196,12 @@ export class StandController {
       }
     }
   }
-  async createStand(request: FastifyRequest, reply: FastifyReply) {
+  async createStand(
+    request: FastifyRequest<{ Body: ICreateStand }>,
+    reply: FastifyReply
+  ) {
     try {
-      const standData = request.body as ICreateStand;
+      const standData = request.body;
       const stand = await createStand(standData, this.standRepository);
 
       reply.status(201).send({
@@ -238,16 +218,38 @@ export class StandController {
     }
   }
   async updateStand(
-    request: FastifyRequest<{ Params: { uuid: string } }>,
+    request: FastifyRequest<{ Body: IUpdateStand; Params: { uuid: string } }>,
     reply: FastifyReply
   ) {
     try {
       const { uuid } = request.params;
-      const standData = request.body as IUpdateStand;
+      const {
+        categoryId,
+        companyId,
+        date,
+        description,
+        imageUrl,
+        latitude,
+        longitude,
+        name,
+        openingHours,
+      } = request.body;
 
+      const updateData = {
+        categoryId,
+        companyId,
+        date,
+        description,
+        imageUrl,
+        latitude,
+        longitude,
+        name,
+        openingHours,
+        uuid,
+      };
       const updatedStand = await updateStand(
         uuid,
-        standData,
+        updateData,
         this.standRepository
       );
 

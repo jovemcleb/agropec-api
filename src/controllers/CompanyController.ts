@@ -5,14 +5,13 @@ import { createCompany } from "../useCases/companies/createCompany";
 import { deleteCompany } from "../useCases/companies/deleteCompany";
 import { findAllCompanies } from "../useCases/companies/findAllCompanies";
 import { updateCompany } from "../useCases/companies/updateCompany";
-interface AdminLogado {
-  uuid: string;
-  email: string;
-  role: string;
-}
+
 
 export class CompanyController {
-  constructor(private companyRepository: CompanyRepository) {}
+  private companyRepository: CompanyRepository
+  constructor(companyRepository: CompanyRepository) {
+    this.companyRepository = companyRepository;
+  }
 
   async create(
     request: FastifyRequest<{ Body: ICreateCompany }>,
@@ -58,28 +57,20 @@ export class CompanyController {
     reply: FastifyReply
   ) {
     try {
-      const adminLogado = request.user as AdminLogado;
-
-      if (adminLogado.role !== "admin") {
-        return reply.status(403).send({
-          error: "Apenas admins podem atualizar companies",
-        });
-      }
-
       const { uuid } = request.params;
       const { name, description } = request.body;
 
-      const updatePayload = {
+      const updateData = {
         uuid,
-        updatedBy: adminLogado.uuid,
         name,
-        description,
+        description, 
       };
 
-      const updatedCompany = await updateCompany(
-        updatePayload,
-        this.companyRepository
-      );
+      const updatedCompany = (await updateCompany(
+        uuid,
+        updateData,
+        this.companyRepository 
+      ));
 
       reply.status(200).send(updatedCompany);
     } catch (error) {

@@ -95,9 +95,13 @@ export class AdminController {
     }
   }
 
-  async update(request: FastifyRequest<{ Body: IAdmin }>, reply: FastifyReply) {
+  async update(
+    request: FastifyRequest<{ Body: IAdmin; Params: { uuid: string } }>,
+    reply: FastifyReply
+  ) {
     try {
-      const { uuid, firstName, lastName, email, password, role } = request.body;
+      const { uuid } = request.params;
+      const { firstName, lastName, email, password, role } = request.body;
 
       const updatedAdmin = await updateAdmin(
         { uuid, firstName, lastName, email, password, role },

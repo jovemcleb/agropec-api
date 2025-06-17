@@ -7,6 +7,7 @@ import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
 import { StandRepository } from "../repositories/StandRepository";
 import { UserRepository } from "../repositories/UserRepository";
+import { NotificationRepository } from "../repositories/NotificationRepository";
 
 const repositoriesPlugin: FastifyPluginAsync = async (
   fastify: FastifyInstance
@@ -26,6 +27,7 @@ const repositoriesPlugin: FastifyPluginAsync = async (
       stand: new StandRepository(fastify),
       admin: new AdminRepository(fastify),
       user: new UserRepository(fastify),
+      notification: new NotificationRepository(fastify), 
     };
 
     fastify.decorate("repositories", repositories);

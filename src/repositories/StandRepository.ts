@@ -16,7 +16,7 @@ export interface IStandRepository {
   getByUuid(uuid: string): Promise<IStandResponse | null>;
   getByDate(date: Date): Promise<IStandResponse[]>;
   getByInterest(interest: string): Promise<IStandResponse[]>;
-  update(uuid: string, standData: IUpdateStand): Promise<IStandResponse | null>;
+  update(uuid: string, stand: Partial<IUpdateStand>): Promise<IStand | null>;
   delete(uuid: string): Promise<boolean>;
 }
 export class StandRepository {
@@ -118,6 +118,7 @@ export class StandRepository {
       ...standData,
     };
   }
+
   async update(uuid: string, standData: IUpdateStand): Promise<IStand | null> {
     const updateData = {
       ...standData,
