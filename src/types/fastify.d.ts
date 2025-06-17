@@ -19,6 +19,7 @@ declare module "fastify" {
       company: CompanyRepository;
       stand: StandRepository;
       admin: AdminRepository;
+      notification: NotificationRepository;
     };
      validateSchema: (
       schemas: ValidationSchemas

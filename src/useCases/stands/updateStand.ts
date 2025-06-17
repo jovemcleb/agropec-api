@@ -8,7 +8,7 @@ import { handleError } from "../../utils/formatter-activity";
 
 export async function updateStand(
   uuid: string,
-  standData: IUpdateStand,
+  updateData: IUpdateStand,
   standRepository: StandRepository
 ): Promise<IStandResponse | null> {
   try {
@@ -16,7 +16,7 @@ export async function updateStand(
       throw new Error("UUID é obrigatório para atualização");
     }
 
-    return await standRepository.update(uuid, standData);
+    return await standRepository.update(uuid, updateData);
   } catch (error) {
     throw handleError(error, "Erro ao atualizar stand");
   }

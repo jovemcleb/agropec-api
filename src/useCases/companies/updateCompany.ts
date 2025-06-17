@@ -1,40 +1,17 @@
-import { ICompany, IUpdateCompany } from "../../interfaces/company";
-import { CompanyRepository } from "../../repositories/CompanyRepository";
-interface UpdateCompanyPayload extends IUpdateCompany {
-  uuid: string;
-  updatedBy: string;
-}
+import { IUpdateCompany } from "../../interfaces/company";
+import {
+  ICompanyRepository,
+} from "../../repositories/CompanyRepository";
+import { handleError } from "../../utils/formatter-activity";
 
 export async function updateCompany(
-  payload: UpdateCompanyPayload,
-  companyRepository: CompanyRepository
+  uuid: string,
+  updateData: IUpdateCompany,
+  companyRepository: ICompanyRepository
 ) {
-  const { uuid, name, description, updatedBy } = payload;
-
-  const companyExists = await companyRepository.findByUuid(uuid);
-
-  if (!companyExists) {
-    throw new Error("Company not found");
+  try {
+    return await companyRepository.update(uuid, updateData);
+  } catch (error) {
+    throw handleError(error, "Erro ao atualizar atividade");
   }
-
-  const updateData: Partial<ICompany> = {
-    updatedBy,
-    updatedAt: new Date(),
-  };
-
-  if (name !== undefined) {
-    updateData.name = name;
-  }
-
-  if (description !== undefined) {
-    updateData.description = description;
-  }
-
-  const updatedCompany = await companyRepository.update(uuid, updateData);
-
-  if (!updatedCompany) {
-    throw new Error("Failed to update company");
-  }
-
-  return updatedCompany;
 }

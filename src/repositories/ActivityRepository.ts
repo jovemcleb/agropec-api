@@ -56,8 +56,6 @@ export class ActivityRepository implements IActivityRepository {
   }
 
   async getByCategory(categoryId: string): Promise<IActivityResponse[]> {
-    if (!ObjectId.isValid(categoryId)) return [];
-
     const results = await this.collection
       .find({ categoryId: { $regex: categoryId, $options: "i" } })
       .sort({ createdAt: -1 })
@@ -135,18 +133,10 @@ export class ActivityRepository implements IActivityRepository {
     };
   }
 
-  async update(
-    uuid: string,
-    updateData: Partial<IUpdateActivity>
-  ): Promise<IActivity | null> {
-    const updateFields = {
-      ...updateData,
-      updatedAt: new Date(),
-    };
-
-    const result = await this.collection.findOneAndUpdate(
+  async update(uuid: string, updateData: Partial<IUpdateActivity>) {
+    const result = await this.collection?.findOneAndUpdate(
       { uuid },
-      { $set: updateFields },
+      { $set: { ...updateData, updatedAt: new Date() } },
       { returnDocument: "after" }
     );
 

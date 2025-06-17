@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { StandController } from "../controllers/StandController";
-import { CreateStandSchema, ICreateStand, UpdateStandSchema } from "../interfaces/stand";
+import { CreateStandSchema, ICreateStand, IUpdateStand, UpdateStandSchema } from "../interfaces/stand";
 
 export const standRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
@@ -33,27 +33,32 @@ export const standRoutes: FastifyPluginAsync = async (
     "/stands/interest/:interest",
     standController.getStandsByInterest.bind(standController)
   );
-   fastify.post(
+   fastify.post<{ Body: ICreateStand}>(
     "/stands",
     {
-      preHandler: fastify.validateSchema({
-        body: CreateStandSchema
-      })
+     preHandler: [
+             fastify.authenticate,
+             fastify.validateSchema({ body: CreateStandSchema }),
+           ],
     },
     standController.createStand.bind(standController)
   );
 
-  fastify.put(
+  fastify.put<{Body: IUpdateStand; Params: { uuid: string }}>(
     "/stands/:uuid",
     {
-       preHandler: fastify.validateSchema({
-        body: UpdateStandSchema
-      })
+       preHandler: [
+             fastify.authenticate,
+             fastify.validateSchema({ body: UpdateStandSchema }),
+           ],
     },
     standController.updateStand.bind(standController)
   );
-  fastify.delete(
+  fastify.delete<{ Params: { uuid: string } }>(
     "/stands/:uuid",
+     {
+      preHandler: fastify.authenticate,
+    },
     standController.deleteStand.bind(standController)
   );
 };
