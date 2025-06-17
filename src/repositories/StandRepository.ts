@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+import { FastifyInstance } from "fastify";
 import { Collection } from "mongodb";
 import {
   ICreateStand,
@@ -5,8 +7,6 @@ import {
   IStandResponse,
   IUpdateStand,
 } from "../interfaces/stand";
-import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
 
 export interface IStandRepository {
   getAll(): Promise<IStandResponse[]>;
@@ -118,10 +118,16 @@ export class StandRepository {
       ...standData,
     };
   }
-  async update(uuid: string, updateData: Partial<IUpdateStand>) {
+
+  async update(uuid: string, standData: IUpdateStand): Promise<IStand | null> {
+    const updateData = {
+      ...standData,
+      updatedAt: new Date(),
+    };
+
     const result = await this.collection.findOneAndUpdate(
       { uuid },
-      { $set: { ...updateData, updatedAt: new Date() } },
+      { $set: updateData },
       { returnDocument: "after" }
     );
 

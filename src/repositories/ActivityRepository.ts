@@ -143,6 +143,7 @@ export class ActivityRepository implements IActivityRepository {
     if (!result) {
       return null;
     }
+
     return result;
   }
 

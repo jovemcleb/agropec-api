@@ -5,12 +5,6 @@ import {
   IUpdateCompany,
 } from "../interfaces/company";
 
-export interface ICompanyRepository {
- update(
-  uuid: string,
-  company: Partial<IUpdateCompany>
- ) : Promise<ICompany | null>;
-}
 export class CompanyRepository {
   private collection;
 
@@ -41,7 +35,7 @@ export class CompanyRepository {
     return companies;
   }
 
-  async findByName(name: string): Promise<ICompanyResponse | null> {
+  async findByName(name: string): Promise<ICompany | null> {
     const company = await this.collection?.findOne({
       name: { $regex: new RegExp(`^${name}$`, "i") },
     });
@@ -50,12 +44,7 @@ export class CompanyRepository {
       return null;
     }
 
-    return {
-      _id: company._id.toString(),
-      uuid: company.uuid,
-      name: company.name,
-      description: company.description,
-    };
+    return company;
   }
 
   async findByUuid(uuid: string) {
@@ -64,7 +53,7 @@ export class CompanyRepository {
     return company;
   }
 
-  async update(uuid: string, company: Partial<IUpdateCompany>) {
+  async update(uuid: string, company: IUpdateCompany) {
     const updatedCompany = await this.collection?.findOneAndUpdate(
       { uuid },
       { $set: { ...company, updatedAt: new Date() } },
