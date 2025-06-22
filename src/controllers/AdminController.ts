@@ -1,5 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { AdminDTO, IAdmin, ILoginInput } from "../interfaces/admin";
+import {
+  IAdmin,
+  ICreateAdmin,
+  ILoginInput,
+  IUpdateAdmin,
+} from "../interfaces/admin";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { createAdmin } from "../useCases/admin/createAdmin";
 import { deleteAdmin } from "../useCases/admin/deleteAdmin";
@@ -47,7 +52,7 @@ export class AdminController {
   }
 
   async signup(
-    request: FastifyRequest<{ Body: AdminDTO }>,
+    request: FastifyRequest<{ Body: ICreateAdmin }>,
     reply: FastifyReply
   ) {
     try {
@@ -83,6 +88,12 @@ export class AdminController {
 
   async findAll(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const authenticatedUser = request.user as { role: string };
+      if (authenticatedUser.role !== "admin") {
+        return reply.status(403).send({
+          error: "Forbidden: You don't have permission to perform this action.",
+        });
+      }
       const admins = await findAllAdmins(this.adminRepository);
 
       reply.status(200).send(admins);
@@ -96,15 +107,25 @@ export class AdminController {
   }
 
   async update(
-    request: FastifyRequest<{ Body: IAdmin; Params: { uuid: string } }>,
+    request: FastifyRequest<{ Params: { uuid: string }; Body: IUpdateAdmin }>,
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
-      const { firstName, lastName, email, password, role } = request.body;
+      const { uuid: uuidParam } = request.params;
+      const authenticatedUser = request.user as { uuid: string };
+
+      if (
+        uuidParam !== authenticatedUser.uuid 
+      ) {
+        return reply.status(403).send({
+          error: "Forbidden: You don't have permission to perform this action.",
+        });
+      }
+      const { uuid, firstName, lastName, email, password } = request.body;
 
       const updatedAdmin = await updateAdmin(
-        { uuid, firstName, lastName, email, password, role },
+        uuidParam,
+        { uuid, firstName, lastName, email, password },
         this.adminRepository
       );
 
@@ -122,9 +143,20 @@ export class AdminController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
+      const { uuid: uuidParam } = request.params;
+      const authenticatedUser = request.user as { uuid: string };
 
-      const deletedAdmin = await deleteAdmin(uuid, this.adminRepository);
+      if (
+        uuidParam !== authenticatedUser.uuid 
+      ) {
+        return reply
+          .status(403)
+          .send({
+            error:
+              "Forbidden: You don't have permission to perform this action.",
+          });
+      }
+      const deletedAdmin = await deleteAdmin(uuidParam, this.adminRepository);
 
       if (!deletedAdmin) {
         return reply.status(404).send({ error: "Admin not found" });

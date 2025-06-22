@@ -10,14 +10,7 @@ import {
 export const activityRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
-  if (!fastify.repositories || !fastify.repositories.activity) {
-    fastify.log.error(
-      "Activity repository not found on fastify instance. Check plugin registration."
-    );
-    throw new Error(
-      "Activity repository is not available. Ensure 'repositories-plugin' is registered before routes and has no errors."
-    );
-  }
+ 
 
   const activityController = new ActivityController(
     fastify.repositories.activity

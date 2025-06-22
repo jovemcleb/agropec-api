@@ -12,9 +12,6 @@ export async function deleteAdmin(
 
   const deletedAdmin = await adminRepository.delete(uuid);
 
-  if (!deletedAdmin) {
-    throw new Error("Failed to delete admin");
-  }
 
   return { message: "Admin deleted successfully" };
 }

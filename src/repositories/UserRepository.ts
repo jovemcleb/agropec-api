@@ -1,31 +1,46 @@
 import { FastifyInstance } from "fastify";
 import { IUser } from "../interfaces/user";
+import bcrypt from "bcrypt";
+import { Collection } from "mongodb";
 
 export class UserRepository {
-  private collection;
+  private collection: Collection<IUser>;
 
-  constructor(fastify: FastifyInstance) {
-    this.collection = fastify.mongo.db?.collection<IUser>("users");
+  private _omitPassword(user: IUser): Omit<IUser, "password"> {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
-  async create(user: IUser) {
-    const result = await this.collection?.insertOne(user);
+  constructor(fastify: FastifyInstance) {
+    const collection = fastify.mongo.db?.collection<IUser>("users");
+
+    if (!collection) {
+      throw new Error("MongoDB collection 'users' not found.");
+    }
+    this.collection = collection;
+  }
+
+  async create(user: IUser): Promise<Omit<IUser, "password">> {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+
+    const newUser = {
+      ...user,
+      password: hashedPassword,
+    };
+    const result = await this.collection.insertOne(newUser);
 
     if (!result || !result.acknowledged) {
       throw new Error("Failed to create user");
     }
 
-    return {
-      id: result.insertedId.toString(),
-      ...user,
-    };
+    return this._omitPassword(newUser);
   }
 
   async addActivities(
     uuid: string,
     activitiesId: string[]
-  ): Promise<IUser | null> {
-    const result = await this.collection?.findOneAndUpdate(
+  ): Promise<Omit<IUser, "password">> {
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
       { $addToSet: { activitiesId: { $each: activitiesId } } },
       { returnDocument: "after" }
@@ -35,14 +50,14 @@ export class UserRepository {
       throw new Error("Failed to add activity to user");
     }
 
-    return result;
+    return this._omitPassword(result);
   }
 
   async removeActivities(
     uuid: string,
     activitiesId: string[]
-  ): Promise<IUser | null> {
-    const result = await this.collection?.findOneAndUpdate(
+  ): Promise<Omit<IUser, "password">> {
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
       { $pull: { activitiesId: { $in: activitiesId } } },
       { returnDocument: "after" }
@@ -52,11 +67,14 @@ export class UserRepository {
       throw new Error("Failed to remove activity from user");
     }
 
-    return result;
+    return this._omitPassword(result);
   }
 
-  async addStands(uuid: string, standsId: string[]): Promise<IUser | null> {
-    const result = await this.collection?.findOneAndUpdate(
+  async addStands(
+    uuid: string,
+    standsId: string[]
+  ): Promise<Omit<IUser, "password">> {
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
       { $addToSet: { standsId: { $each: standsId } } },
       { returnDocument: "after" }
@@ -66,11 +84,14 @@ export class UserRepository {
       throw new Error("Failed to add stand to user");
     }
 
-    return result;
+    return this._omitPassword(result);
   }
 
-  async removeStands(uuid: string, standsId: string[]): Promise<IUser | null> {
-    const result = await this.collection?.findOneAndUpdate(
+  async removeStands(
+    uuid: string,
+    standsId: string[]
+  ): Promise<Omit<IUser, "password">> {
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
       { $pull: { standsId: { $in: standsId } } },
       { returnDocument: "after" }
@@ -80,33 +101,48 @@ export class UserRepository {
       throw new Error("Failed to remove stand from user");
     }
 
-    return result;
+    return this._omitPassword(result);
   }
 
-  async findAll(): Promise<IUser[]> {
-    const users = await this.collection?.find().toArray();
+  async findAll(): Promise<Omit<IUser, "password">[]> {
+    const users = await this.collection.find().toArray();
 
-    if (!users) {
-      throw new Error("No users found");
-    }
-
-    return users;
+    return users.map(this._omitPassword);
   }
 
-  async findByUuid(uuid: string): Promise<IUser | null> {
-    const user = await this.collection?.findOne({ uuid });
+  async findByEmail(email: string): Promise<IUser | null> {
+    const user = await this.collection.findOne({ email });
+
+    return user;
+  }
+  async findByUuid(uuid: string): Promise<Omit<IUser, "password"> | null> {
+    const user = await this.collection.findOne({ uuid });
 
     if (!user) {
       return null;
     }
 
+    return this._omitPassword(user);
+  }
+
+  async findByUuidWithPassword(uuid: string): Promise<IUser | null> {
+    const user = await this.collection.findOne({ uuid });
     return user;
   }
 
-  async update(uuid: string, user: IUser): Promise<IUser | null> {
-    const result = await this.collection?.findOneAndUpdate(
+  async update(
+    uuid: string,
+    user: Partial<IUser>
+  ): Promise<Omit<IUser, "password">> {
+    const updatePayload: Partial<IUser> = { ...user };
+
+    if (updatePayload.password) {
+      updatePayload.password = await bcrypt.hash(updatePayload.password, 10);
+    }
+
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
-      { $set: user },
+      { $set: updatePayload },
       { returnDocument: "after" }
     );
 
@@ -114,11 +150,11 @@ export class UserRepository {
       throw new Error("Failed to update user");
     }
 
-    return result;
+    return this._omitPassword(result);
   }
 
   async delete(uuid: string) {
-    const result = await this.collection?.deleteOne({ uuid });
+    const result = await this.collection.deleteOne({ uuid });
     if (!result || result.deletedCount === 0) {
       throw new Error("Failed to delete user");
     }

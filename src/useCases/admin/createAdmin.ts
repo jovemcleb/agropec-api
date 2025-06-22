@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto";
-import { AdminDTO } from "../../interfaces/admin";
+import { ICreateAdmin } from "../../interfaces/admin";
 import { AdminRepository } from "../../repositories/AdminRepository";
 
 export async function createAdmin(
-  payload: AdminDTO,
+  payload: ICreateAdmin,
   adminRepository: AdminRepository
 ) {
   if (payload.role !== "admin" && payload.role !== "staff") {

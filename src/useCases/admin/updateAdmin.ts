@@ -1,28 +1,28 @@
-import { IAdmin } from "../../interfaces/admin";
+import { hash } from "bcrypt";
+import { IUpdateAdmin } from "../../interfaces/admin";
 import { AdminRepository } from "../../repositories/AdminRepository";
 
 export async function updateAdmin(
-  payload: IAdmin,
+  uuidParam: string,
+  payload: Partial<IUpdateAdmin>,
   adminRepository: AdminRepository
 ) {
-  const { uuid, firstName, lastName, email, role } = payload;
+  const { firstName, lastName, email, password } = payload;
 
-  const adminExists = await adminRepository.findByUuid(uuid);
+  const adminDB = await adminRepository.findByUuidWithPassword(uuidParam);
 
-  if (!adminExists) {
+  if (!adminDB) {
     throw new Error("Admin not found");
   }
 
-  const updatedAdmin = await adminRepository.update(uuid, {
-    firstName,
-    lastName,
-    email,
-    role,
-  });
+  const hashedPassword = password ? await hash(password, 10) : adminDB.password;
 
-  if (!updatedAdmin) {
-    throw new Error("Failed to update admin");
-  }
+  const adminDataToUpdate = {
+    firstName: firstName ?? adminDB.firstName,
+    lastName: lastName ?? adminDB.lastName,
+    email: email ?? adminDB.email,
+    password: hashedPassword,
+  };
 
-  return updatedAdmin;
+  return adminRepository.update(adminDB.uuid, adminDataToUpdate);
 }

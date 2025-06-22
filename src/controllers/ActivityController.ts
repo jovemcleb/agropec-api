@@ -189,6 +189,12 @@ export class ActivityController {
     reply: FastifyReply
   ) {
     try {
+      const authenticatedUser = request.user as { uuid: string; role: string };
+      if (authenticatedUser.role !== "admin") {
+        return reply.status(403).send({
+          error: "Forbidden: You don't have permission to perform this action.",
+        });
+      }
       const activityData = request.body;
       const createdActivity = await createActivity(
         activityData,
@@ -217,6 +223,12 @@ export class ActivityController {
     reply: FastifyReply
   ) {
     try {
+      const authenticatedUser = request.user as { uuid: string; role: string };
+      if (authenticatedUser.role !== "admin") {
+        return reply.status(403).send({
+          error: "Forbidden: You don't have permission to perform this action.",
+        });
+      }
       const { uuid } = request.params;
       const {
         name,
@@ -232,7 +244,7 @@ export class ActivityController {
       } = request.body;
 
       const updateData = {
-        uuid, // ficar de olho nesse uuid, ja que ja passamos o params, porém tava dando erro sem ele
+        uuid, 
         name,
         description,
         categoryId,
@@ -243,7 +255,7 @@ export class ActivityController {
         imageUrl,
         endTime,
         startTime,
-      } 
+      };
       const updatedActivity = await updateActivity(
         uuid,
         updateData,
@@ -277,6 +289,13 @@ export class ActivityController {
     reply: FastifyReply
   ) {
     try {
+      const authenticatedUser = request.user as { uuid: string; role: string };
+      if (authenticatedUser.role !== "admin") {
+        return reply.status(403).send({
+          error: "Forbidden: You don't have permission to perform this action.",
+        });
+      }
+
       const { uuid } = request.params;
       const deleted = await deleteActivity(uuid, this.activityRepository);
 
