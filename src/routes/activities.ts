@@ -10,8 +10,6 @@ import {
 export const activityRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
- 
-
   const activityController = new ActivityController(
     fastify.repositories.activity
   );
@@ -49,32 +47,34 @@ export const activityRoutes: FastifyPluginAsync = async (
   fastify.post<{ Body: ICreateActivity }>(
     "/activities",
     {
-       preHandler: [
-             fastify.authenticate,
-             fastify.validateSchema({ body: CreateActivitySchema }),
-           ],
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize("admin"),
+        fastify.validateSchema({ body: CreateActivitySchema }),
+      ],
     },
     activityController.createActivity.bind(activityController)
   );
 
   fastify.put<{
-        Body: IUpdateActivity;
-        Params: { uuid: string };
-      }>(
+    Body: IUpdateActivity;
+    Params: { uuid: string };
+  }>(
     "/activities/:uuid",
     {
-     preHandler: [
-            fastify.authenticate,
-            fastify.validateSchema({ body: UpdateActivitySchema }),
-          ],
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize("admin"),
+        fastify.validateSchema({ body: UpdateActivitySchema }),
+      ],
     },
     activityController.updateActivity.bind(activityController)
   );
 
   fastify.delete<{ Params: { uuid: string } }>(
     "/activities/:uuid",
-      {
-      preHandler: fastify.authenticate,
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("admin")],
     },
     activityController.deleteActivity.bind(activityController)
   );

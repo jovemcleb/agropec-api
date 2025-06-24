@@ -88,12 +88,6 @@ export class AdminController {
 
   async findAll(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const authenticatedUser = request.user as { role: string };
-      if (authenticatedUser.role !== "admin") {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
       const admins = await findAllAdmins(this.adminRepository);
 
       reply.status(200).send(admins);
@@ -112,15 +106,7 @@ export class AdminController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string };
 
-      if (
-        uuidParam !== authenticatedUser.uuid 
-      ) {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
       const { uuid, firstName, lastName, email, password } = request.body;
 
       const updatedAdmin = await updateAdmin(
@@ -144,23 +130,8 @@ export class AdminController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string };
 
-      if (
-        uuidParam !== authenticatedUser.uuid 
-      ) {
-        return reply
-          .status(403)
-          .send({
-            error:
-              "Forbidden: You don't have permission to perform this action.",
-          });
-      }
       const deletedAdmin = await deleteAdmin(uuidParam, this.adminRepository);
-
-      if (!deletedAdmin) {
-        return reply.status(404).send({ error: "Admin not found" });
-      }
 
       reply.status(200).send(deletedAdmin);
     } catch (error) {

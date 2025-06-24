@@ -10,13 +10,16 @@ import { NotificationController } from "../controllers/NotificationController";
 export const notificationsRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
-  const notificationController = new NotificationController(fastify.repositories.notification);
+  const notificationController = new NotificationController(
+    fastify.repositories.notification
+  );
 
   fastify.post<{ Body: ICreateNotification }>(
     "/notifications",
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("admin"),
         fastify.validateSchema({
           body: CreateNotificationSchema,
         }),
@@ -25,13 +28,17 @@ export const notificationsRoutes: FastifyPluginAsync = async (
     notificationController.create.bind(notificationController)
   );
 
-  fastify.get("/notifications", notificationController.getAll.bind(notificationController));
-  
+  fastify.get(
+    "/notifications",
+    notificationController.getAll.bind(notificationController)
+  );
+
   fastify.put<{ Body: IUpdateNotification; Params: { uuid: string } }>(
     "/notifications/:uuid",
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("admin"),
         fastify.validateSchema({ body: UpdateNotificationSchema }),
       ],
     },
@@ -41,7 +48,7 @@ export const notificationsRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/notifications/:uuid",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.authorize("admin")],
     },
     notificationController.delete.bind(notificationController)
   );

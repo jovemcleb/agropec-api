@@ -21,12 +21,18 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Body: ICreateAdmin }>(
     "/admin/signup",
-    { preHandler: fastify.validateSchema({ body: CreateAdminSchema }) },
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize("admin"),
+        fastify.validateSchema({ body: CreateAdminSchema }),
+      ],
+    },
     adminController.signup.bind(adminController)
   );
   fastify.get(
     "/admins",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.authenticate, fastify.authorize("admin")] },
     adminController.findAll.bind(adminController)
   );
   fastify.patch<{ Params: { uuid: string }; Body: IUpdateAdmin }>(
@@ -34,14 +40,15 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [
         fastify.authenticate,
-        fastify.validateSchema({ body: UpdateAdminSchema }), 
+        fastify.authorize("selfOrAdmin"),
+        fastify.validateSchema({ body: UpdateAdminSchema }),
       ],
     },
     adminController.update.bind(adminController)
   );
   fastify.delete<{ Params: { uuid: string } }>(
     "/admin/:uuid",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.authenticate, fastify.authorize("admin")] },
     adminController.delete.bind(adminController)
   );
 };

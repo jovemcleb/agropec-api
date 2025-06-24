@@ -11,13 +11,14 @@ import { mongo } from "./plugins/mongo";
 import { repositories } from "./plugins/repositories";
 import { routes } from "./routes";
 import { jwt } from "./plugins/jwt";
+import { authorization } from "./plugins/authorization";
 
 const server = Fastify();
 
 server.register(mongo);
 server.register(repositories);
 server.register(jwt);
-
+server.register(authorization);
 server.register(cors, {
   origin: true,
 });
@@ -25,9 +26,7 @@ server.register(cors, {
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
 server.withTypeProvider<ZodTypeProvider>();
-
 server.setErrorHandler(errorHandler);
-
 server.register(routes);
 
 server.get("/", async (request, reply) => {

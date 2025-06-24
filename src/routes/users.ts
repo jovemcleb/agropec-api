@@ -36,6 +36,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
         fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
     },
@@ -50,6 +51,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
         fastify.validateSchema({ body: UserStandsSchema }),
       ],
     },
@@ -64,6 +66,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
         fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
     },
@@ -78,6 +81,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
        preHandler: [
         fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
         fastify.validateSchema({ body: UserStandsSchema }),
       ],
     },
@@ -89,15 +93,18 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
        preHandler: [
         fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
         fastify.validateSchema({ body: UpdateUserSchema }),
       ],
     },
     userController.update.bind(userController)
   );
 
-  fastify.delete<{ Params: { uuid: string } }>("/users/:uuid",   
-    {
-      preHandler: fastify.authenticate,
+  fastify.delete<{ Params: { uuid: string } }>("/users/:uuid",   {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize("selfOrAdmin"),
+      ],
     },
      userController.delete.bind(userController));
 };

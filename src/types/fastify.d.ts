@@ -25,6 +25,9 @@ declare module "fastify" {
     validateSchema: (
       schemas: ValidationSchemas
     ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorize: (
+      strategy: AuthorizationStrategy
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 

@@ -93,12 +93,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string; role: string };
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
+
       const { activitiesId } = request.body;
 
       const userActivities = await addUserActivities(
@@ -126,16 +121,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string ; role: string };
 
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply
-          .status(403)
-          .send({
-            error:
-              "Forbidden: You don't have permission to perform this action.",
-          });
-      }
       const { activitiesId } = request.body;
 
       const userActivities = await removeUserActivities(
@@ -163,16 +149,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string; role: string };
 
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply
-          .status(403)
-          .send({
-            error:
-              "Forbidden: You don't have permission to perform this action.",
-          });
-      }
       const { standsId } = request.body;
 
       const userStands = await addUserStands(
@@ -199,13 +176,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string; role: string };
 
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
       const { standsId } = request.body;
 
       const userStands = await removeUserStands(
@@ -233,12 +204,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string; role: string };
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
+
       const { uuid, firstName, lastName, email, password } = request.body;
 
       const user = await updateUser(
@@ -265,13 +231,7 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const authenticatedUser = request.user as { uuid: string; role: string };
 
-      if (uuidParam !== authenticatedUser.uuid && authenticatedUser.role !== 'admin') {
-        return reply.status(403).send({
-          error: "Forbidden: You don't have permission to perform this action.",
-        });
-      }
       const user = await deleteUser(uuidParam, this.userRepository);
 
       reply.status(200).send(user);
