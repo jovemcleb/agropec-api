@@ -6,12 +6,15 @@ import {
   IUpdateUser,
   UpdateUserSchema,
   UserActivitiesSchema,
+  UserStandsSchema,
 } from "../interfaces/user";
 
 export const usersRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
   const userController = new UserController(fastify.repositories.user);
+
+  fastify.get("/users", userController.findAll.bind(userController));
 
   fastify.post<{ Body: ICreateUser }>(
     "/users",
@@ -25,9 +28,17 @@ export const usersRoutes: FastifyPluginAsync = async (
   }>(
     "/users/:uuid/activities",
     {
-      preHandler: fastify.validateSchema({
-        body: UserActivitiesSchema,
-      }),
+      preHandler: [
+        fastify.validateSchema({
+          body: UserActivitiesSchema,
+        }),
+      ],
+      onResponse: async (request, reply) => {
+        const { uuid } = request.params;
+        await fastify.notificationScheduler.scheduleUserEventNotifications(
+          uuid
+        );
+      },
     },
     userController.addActivity.bind(userController)
   );
@@ -38,9 +49,17 @@ export const usersRoutes: FastifyPluginAsync = async (
   }>(
     "/users/:uuid/stands",
     {
-      preHandler: fastify.validateSchema({
-        body: UserActivitiesSchema,
-      }),
+      preHandler: [
+        fastify.validateSchema({
+          body: UserStandsSchema,
+        }),
+      ],
+      onResponse: async (request, reply) => {
+        const { uuid } = request.params;
+        await fastify.notificationScheduler.scheduleUserEventNotifications(
+          uuid
+        );
+      },
     },
     userController.addStands.bind(userController)
   );
@@ -51,9 +70,17 @@ export const usersRoutes: FastifyPluginAsync = async (
   }>(
     "/users/:uuid/activities",
     {
-      preHandler: fastify.validateSchema({
-        body: UserActivitiesSchema,
-      }),
+      preHandler: [
+        fastify.validateSchema({
+          body: UserActivitiesSchema,
+        }),
+      ],
+      onResponse: async (request, reply) => {
+        const { uuid } = request.params;
+        await fastify.notificationScheduler.scheduleUserEventNotifications(
+          uuid
+        );
+      },
     },
     userController.removeActivities.bind(userController)
   );
@@ -64,9 +91,17 @@ export const usersRoutes: FastifyPluginAsync = async (
   }>(
     "/users/:uuid/stands",
     {
-      preHandler: fastify.validateSchema({
-        body: UserActivitiesSchema,
-      }),
+      preHandler: [
+        fastify.validateSchema({
+          body: UserStandsSchema,
+        }),
+      ],
+      onResponse: async (request, reply) => {
+        const { uuid } = request.params;
+        await fastify.notificationScheduler.scheduleUserEventNotifications(
+          uuid
+        );
+      },
     },
     userController.removeStands.bind(userController)
   );

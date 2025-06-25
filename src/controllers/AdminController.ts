@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { AdminDTO, IAdmin, ILoginInput } from "../interfaces/admin";
+import { AdminDTO, IAdmin, ILoginAdmin } from "../interfaces/admin";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { createAdmin } from "../useCases/admin/createAdmin";
 import { deleteAdmin } from "../useCases/admin/deleteAdmin";
@@ -11,7 +11,7 @@ export class AdminController {
   constructor(private adminRepository: AdminRepository) {}
 
   async login(
-    request: FastifyRequest<{ Body: ILoginInput }>,
+    request: FastifyRequest<{ Body: ILoginAdmin }>,
     reply: FastifyReply
   ) {
     try {

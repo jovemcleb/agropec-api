@@ -5,12 +5,31 @@ import { addUserActivities } from "../useCases/users/addUserActivities";
 import { addUserStands } from "../useCases/users/addUserStands";
 import { createUser } from "../useCases/users/createUser";
 import { deleteUser } from "../useCases/users/deleteUser";
+import { findAllUsers } from "../useCases/users/findAllUsers";
 import { removeUserActivities } from "../useCases/users/removeUserActivities";
 import { removeUserStands } from "../useCases/users/removeUserStands";
 import { updateUser } from "../useCases/users/updateUser";
 
 export class UserController {
   constructor(private userRepository: UserRepository) {}
+
+  async findAll(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const users = await findAllUsers(this.userRepository);
+
+      reply.status(200).send({
+        success: true,
+        message: "Usuários encontrados com sucesso",
+        data: users,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(400).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
 
   async create(
     request: FastifyRequest<{ Body: ICreateUser }>,

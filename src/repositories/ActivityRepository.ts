@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { FastifyInstance } from "fastify";
-import { Collection, ObjectId } from "mongodb";
+import { Collection, WithId } from "mongodb";
 import {
   IActivity,
   IActivityResponse,
@@ -10,7 +10,7 @@ import {
 
 export interface IActivityRepository {
   getAll(): Promise<IActivityResponse[]>;
-  getByUuid(uuid: string): Promise<IActivityResponse | null>;
+  getByUuid(uuid: string): Promise<WithId<IActivity> | null>;
   getByCategory(categoryId: string): Promise<IActivityResponse[]>;
   getByName(name: string): Promise<IActivityResponse[]>;
   getByDate(date: string): Promise<IActivityResponse[]>;
@@ -44,15 +44,12 @@ export class ActivityRepository implements IActivityRepository {
     })) as IActivityResponse[];
   }
 
-  async getByUuid(uuid: string): Promise<IActivityResponse | null> {
+  async getByUuid(uuid: string): Promise<WithId<IActivity> | null> {
     const result = await this.collection.findOne({ uuid });
 
     if (!result) return null;
 
-    return {
-      ...result,
-      _id: result._id.toString(),
-    } as IActivityResponse;
+    return result;
   }
 
   async getByCategory(categoryId: string): Promise<IActivityResponse[]> {
@@ -115,8 +112,8 @@ export class ActivityRepository implements IActivityRepository {
 
   async create(activity: ICreateActivity): Promise<IActivityResponse> {
     const activityData = {
-      ...activity,
       uuid: randomUUID(),
+      ...activity,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

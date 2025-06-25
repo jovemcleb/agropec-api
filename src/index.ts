@@ -8,19 +8,36 @@ import {
 import { errorHandler } from "./handlers/error-handler";
 import { jwt } from "./plugins/jwt";
 import { mongo } from "./plugins/mongo";
+import { notifications } from "./plugins/notifications";
 import { repositories } from "./plugins/repositories";
+import { websocket } from "./plugins/websocket";
 import { routes } from "./routes";
 
-const server = Fastify();
-
-server.register(mongo);
-server.register(repositories);
-
-server.register(jwt);
+const server = Fastify({
+  logger: {
+    level: "debug",
+    transport: {
+      target: "pino-pretty",
+      options: {
+        translateTime: "HH:MM:ss Z",
+        ignore: "pid,hostname",
+      },
+    },
+  },
+});
 
 server.register(cors, {
-  origin: true,
+  origin: ["http://localhost:3000"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
+  credentials: true,
 });
+
+server.register(mongo);
+server.register(jwt);
+server.register(repositories);
+server.register(websocket);
+server.register(notifications);
 
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);

@@ -1,6 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { StandController } from "../controllers/StandController";
-import { CreateStandSchema, ICreateStand, IUpdateStand, UpdateStandSchema } from "../interfaces/stand";
+import {
+  CreateStandSchema,
+  ICreateStand,
+  IUpdateStand,
+  UpdateStandSchema,
+} from "../interfaces/stand";
 
 export const standRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
@@ -33,30 +38,43 @@ export const standRoutes: FastifyPluginAsync = async (
     "/stands/interest/:interest",
     standController.getStandsByInterest.bind(standController)
   );
-   fastify.post<{ Body: ICreateStand}>(
+  fastify.post<{ Body: ICreateStand }>(
     "/stands",
     {
-     preHandler: [
-             fastify.authenticate,
-             fastify.validateSchema({ body: CreateStandSchema }),
-           ],
+      preHandler: [
+        fastify.authenticate,
+        fastify.validateSchema({ body: CreateStandSchema }),
+      ],
     },
     standController.createStand.bind(standController)
   );
 
-  fastify.put<{Body: IUpdateStand; Params: { uuid: string }}>(
+  fastify.put<{ Body: IUpdateStand; Params: { uuid: string } }>(
     "/stands/:uuid",
     {
-       preHandler: [
-             fastify.authenticate,
-             fastify.validateSchema({ body: UpdateStandSchema }),
-           ],
+      preHandler: [
+        fastify.authenticate,
+        fastify.validateSchema({ body: UpdateStandSchema }),
+      ],
+      onResponse: async (request, reply) => {
+        // Buscar usuários que têm este stand usando o novo método
+        const users = await fastify.repositories.user.findByStand(
+          request.params.uuid
+        );
+
+        // Reagendar notificações para cada usuário afetado
+        for (const user of users) {
+          await fastify.notificationScheduler.scheduleUserEventNotifications(
+            user.uuid
+          );
+        }
+      },
     },
     standController.updateStand.bind(standController)
   );
   fastify.delete<{ Params: { uuid: string } }>(
     "/stands/:uuid",
-     {
+    {
       preHandler: fastify.authenticate,
     },
     standController.deleteStand.bind(standController)

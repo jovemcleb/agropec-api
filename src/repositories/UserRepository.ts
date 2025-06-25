@@ -129,4 +129,32 @@ export class UserRepository {
       deletedCount: result.deletedCount,
     };
   }
+
+  async findByActivity(activityId: string): Promise<IUser[]> {
+    const users = await this.collection
+      ?.find({
+        activitiesId: { $in: [activityId] },
+      })
+      .toArray();
+
+    if (!users) {
+      return [];
+    }
+
+    return users;
+  }
+
+  async findByStand(standId: string): Promise<IUser[]> {
+    const users = await this.collection
+      ?.find({
+        standsId: { $in: [standId] },
+      })
+      .toArray();
+
+    if (!users) {
+      return [];
+    }
+
+    return users;
+  }
 }
