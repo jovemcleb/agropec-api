@@ -26,7 +26,7 @@ async function seedAdmin() {
       lastName: 'Principal',
       email: 'admin@agropec.com',
       password: await hash('senhaSuperForte123', 10), 
-      role: 'admin',
+      role: 'SUPER_ADMIN',
       createdAt: new Date(),
       updatedAt: new Date(),
     };

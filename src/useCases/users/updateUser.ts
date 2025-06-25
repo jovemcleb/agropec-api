@@ -15,9 +15,15 @@ export async function updateUser(
     throw new Error("User not found");
   }
 
-  const hashedPassword = password
-    ? await hash(password, 10)
-    : userDB.password;
+  if (email && email !== userDB.email) {
+    const existingUserWithNewEmail = await userRepository.findByEmail(email);
+
+    if (existingUserWithNewEmail) {
+      throw new Error("E-mail já está em uso por outro usuário");
+    }
+  }
+
+  const hashedPassword = password ? await hash(password, 10) : userDB.password;
 
   const userDataToUpdate = {
     firstName: firstName ?? userDB.firstName,

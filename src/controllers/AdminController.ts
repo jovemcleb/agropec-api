@@ -56,10 +56,10 @@ export class AdminController {
     reply: FastifyReply
   ) {
     try {
-      const { email, firstName, lastName, password, role } = request.body;
+      const { email, firstName, lastName, password } = request.body;
 
       const newAdmin = await createAdmin(
-        { email, firstName, lastName, password, role },
+        { email, firstName, lastName, password, role: "admin" },
         this.adminRepository
       );
 
@@ -108,8 +108,9 @@ export class AdminController {
       const { uuid: uuidParam } = request.params;
 
       const { uuid, firstName, lastName, email, password } = request.body;
-
+      const requester = request.user as { uuid: string; role: string };
       const updatedAdmin = await updateAdmin(
+        requester,
         uuidParam,
         { uuid, firstName, lastName, email, password },
         this.adminRepository
@@ -130,8 +131,12 @@ export class AdminController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-
-      const deletedAdmin = await deleteAdmin(uuidParam, this.adminRepository);
+      const requester = request.user as { uuid: string; role: string };
+      const deletedAdmin = await deleteAdmin(
+        requester,
+        uuidParam,
+        this.adminRepository
+      );
 
       reply.status(200).send(deletedAdmin);
     } catch (error) {

@@ -49,7 +49,7 @@ export const activityRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("admin"),
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: CreateActivitySchema }),
       ],
     },
@@ -64,7 +64,7 @@ export const activityRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("admin"),
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateActivitySchema }),
       ],
     },
@@ -74,7 +74,7 @@ export const activityRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/activities/:uuid",
     {
-      preHandler: [fastify.authenticate, fastify.authorize("admin")],
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     activityController.deleteActivity.bind(activityController)
   );

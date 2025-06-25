@@ -136,10 +136,6 @@ export class UserRepository {
   ): Promise<Omit<IUser, "password">> {
     const updatePayload: Partial<IUser> = { ...user };
 
-    if (updatePayload.password) {
-      updatePayload.password = await bcrypt.hash(updatePayload.password, 10);
-    }
-
     const result = await this.collection.findOneAndUpdate(
       { uuid },
       { $set: updatePayload },

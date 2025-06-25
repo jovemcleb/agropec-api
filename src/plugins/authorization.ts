@@ -1,7 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 
-export type AuthorizationStrategy = "admin" | "selfOrAdmin";
+export type AuthorizationStrategy =
+  | "anyAdmin"
+  | "selfOrAnyAdmin"
+  | "superAdmin";
 
 interface AuthenticatedUser {
   uuid: string;
@@ -22,18 +25,29 @@ async function authorizationPlugin(fastify: FastifyInstance) {
           const params = request.params as UuidParams;
 
           switch (strategy) {
-            case "admin":
-              if (user.role !== "admin") {
+            case "superAdmin":
+              if (user.role !== "SUPER_ADMIN") {
                 return reply.status(403).send({
-                  error: "Forbidden: Admin access required.",
+                  error: "Forbidden: SUPER_ADMIN access required.",
+                });
+              }
+              break;
+            case "anyAdmin":
+              if (!["SUPER_ADMIN", "admin"].includes(user.role)) {
+                return reply.status(403).send({
+                  error: "Forbidden: Admin level access required.",
                 });
               }
               break;
 
-            case "selfOrAdmin":
-              if (user.role !== "admin" && params.uuid !== user.uuid) {
+            case "selfOrAnyAdmin":
+              const isAdminLevel = ["SUPER_ADMIN", "admin"].includes(user.role);
+              const isSelf = params.uuid === user.uuid;
+
+              if (!isAdminLevel && !isSelf) {
                 return reply.status(403).send({
-                  error: "Forbidden: You don't have permission to perform this action.",
+                  error:
+                    "Forbidden: You don't have permission to perform this action.",
                 });
               }
               break;
@@ -44,7 +58,7 @@ async function authorizationPlugin(fastify: FastifyInstance) {
               });
           }
         } catch (err) {
-            reply.status(500).send({ error: "Internal Server Error" });
+          reply.status(500).send({ error: "Internal Server Error" });
         }
       }
   );

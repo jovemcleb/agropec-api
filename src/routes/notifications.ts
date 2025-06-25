@@ -19,7 +19,7 @@ export const notificationsRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("admin"),
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({
           body: CreateNotificationSchema,
         }),
@@ -38,7 +38,7 @@ export const notificationsRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("admin"),
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateNotificationSchema }),
       ],
     },
@@ -48,7 +48,7 @@ export const notificationsRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/notifications/:uuid",
     {
-      preHandler: [fastify.authenticate, fastify.authorize("admin")],
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     notificationController.delete.bind(notificationController)
   );
