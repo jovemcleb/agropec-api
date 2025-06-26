@@ -1,12 +1,11 @@
 import { FastifyPluginAsync } from "fastify";
 import { AdminController } from "../controllers/AdminController";
 import {
-  IAdmin,
   CreateAdminSchema,
   ICreateAdmin,
   ILoginInput,
-  LoginSchema,
   IUpdateAdmin,
+  LoginSchema,
   UpdateAdminSchema,
 } from "../interfaces/admin";
 
@@ -35,7 +34,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")] },
     adminController.findAll.bind(adminController)
   );
-  fastify.patch<{ Params: { uuid: string }; Body: IUpdateAdmin }>(
+  fastify.put<{ Params: { uuid: string }; Body: IUpdateAdmin }>(
     "/admin/:uuid",
     {
       preHandler: [

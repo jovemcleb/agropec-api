@@ -1,11 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { NotificationController } from "../controllers/NotificationController";
 import {
   CreateNotificationSchema,
   ICreateNotification,
   IUpdateNotification,
   UpdateNotificationSchema,
 } from "../interfaces/notification";
-import { NotificationController } from "../controllers/NotificationController";
 
 export const notificationsRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
@@ -24,6 +24,29 @@ export const notificationsRoutes: FastifyPluginAsync = async (
           body: CreateNotificationSchema,
         }),
       ],
+      onResponse: async (request, reply) => {
+        const uuid = reply.notification?.uuid;
+
+        if (!uuid) return;
+
+        const notification = await fastify.repositories.notification.getByUuid(
+          uuid
+        );
+
+        if (notification) {
+          await fastify.scheduleGlobalNotification(notification);
+
+          if (!notification.isScheduled) {
+            console.log(
+              "[WebSocket] Interceptando criação de notificação não agendada"
+            );
+            fastify.wsManager.broadcastNotification(
+              notification,
+              notification.targetAudience
+            );
+          }
+        }
+      },
     },
     notificationController.create.bind(notificationController)
   );
@@ -51,5 +74,15 @@ export const notificationsRoutes: FastifyPluginAsync = async (
       preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     notificationController.delete.bind(notificationController)
+  );
+
+  fastify.get(
+    "/notifications/scheduled",
+    {
+      preHandler: [fastify.authenticate],
+    },
+    notificationController.getScheduledNotifications.bind(
+      notificationController
+    )
   );
 };

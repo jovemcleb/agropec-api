@@ -1,11 +1,22 @@
 import "@fastify/jwt";
 import "fastify";
-
+import {
+  INotification,
+  INotificationResponse,
+} from "../interfaces/notification";
+import { AuthorizationStrategy } from "../plugins/authorization";
+import { WebSocketManager } from "../plugins/websocket";
+import { ActivityRepository } from "../repositories/ActivityRepository";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
+import { NotificationRepository } from "../repositories/NotificationRepository";
 import { StandRepository } from "../repositories/StandRepository";
-import { ActivityRepository } from "../src/repositories/ActivityRepository";
+import { UserNotificationRepository } from "../repositories/UserNotificationRepository";
+import { UserRepository } from "../repositories/UserRepository";
+import { GlobalNotificationService } from "../services/GlobalNotificationService";
+import { NotificationScheduler } from "../services/NotificationScheduler";
+import { UserNotificationService } from "../services/UserNotificationService";
 import { UserRole } from "../utils/user-role";
 
 declare module "fastify" {
@@ -14,6 +25,9 @@ declare module "fastify" {
       request: FastifyRequest,
       reply: FastifyReply
     ) => Promise<void>;
+    authorize: (
+      strategy: AuthorizationStrategy
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     repositories: {
       activity: ActivityRepository;
       category: CategoryRepository;
@@ -22,13 +36,24 @@ declare module "fastify" {
       admin: AdminRepository;
       user: UserRepository;
       notification: NotificationRepository;
+      userNotification: UserNotificationRepository;
     };
+    notificationScheduler: NotificationScheduler;
+    userNotificationService: UserNotificationService;
+    globalNotificationService: GlobalNotificationService;
+    scheduleGlobalNotification: (notification: INotification) => Promise<void>;
     validateSchema: (
       schemas: ValidationSchemas
     ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-    authorize: (
-      strategy: AuthorizationStrategy
-    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    wsManager: WebSocketManager;
+  }
+
+  interface FastifyRequest {
+    afterResponse?: () => Promise<void>;
+  }
+
+  interface FastifyReply {
+    notification?: INotificationResponse;
   }
 }
 

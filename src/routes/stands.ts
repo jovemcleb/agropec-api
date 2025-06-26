@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { StandController } from "../controllers/StandController";
+
 import {
   CreateStandSchema,
   ICreateStand,
@@ -58,6 +59,19 @@ export const standRoutes: FastifyPluginAsync = async (
         fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateStandSchema }),
       ],
+      onResponse: async (request, reply) => {
+        // Buscar usuários que têm este stand usando o novo método
+        const users = await fastify.repositories.user.findByStand(
+          request.params.uuid
+        );
+
+        // Reagendar notificações para cada usuário afetado
+        for (const user of users) {
+          await fastify.notificationScheduler.scheduleUserEventNotifications(
+            user.uuid
+          );
+        }
+      },
     },
     standController.updateStand.bind(standController)
   );

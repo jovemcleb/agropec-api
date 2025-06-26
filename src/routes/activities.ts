@@ -67,6 +67,19 @@ export const activityRoutes: FastifyPluginAsync = async (
         fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateActivitySchema }),
       ],
+      onResponse: async (request, reply) => {
+        // Buscar usuários que têm esta atividade usando o novo método
+        const users = await fastify.repositories.user.findByActivity(
+          request.params.uuid
+        );
+
+        // Reagendar notificações para cada usuário afetado
+        for (const user of users) {
+          await fastify.notificationScheduler.scheduleUserEventNotifications(
+            user.uuid
+          );
+        }
+      },
     },
     activityController.updateActivity.bind(activityController)
   );

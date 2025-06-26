@@ -5,9 +5,10 @@ import { ActivityRepository } from "../repositories/ActivityRepository";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
-import { StandRepository } from "../repositories/StandRepository";
-import { UserRepository } from "../repositories/UserRepository";
 import { NotificationRepository } from "../repositories/NotificationRepository";
+import { StandRepository } from "../repositories/StandRepository";
+import { UserNotificationRepository } from "../repositories/UserNotificationRepository";
+import { UserRepository } from "../repositories/UserRepository";
 
 const repositoriesPlugin: FastifyPluginAsync = async (
   fastify: FastifyInstance
@@ -27,7 +28,8 @@ const repositoriesPlugin: FastifyPluginAsync = async (
       stand: new StandRepository(fastify),
       admin: new AdminRepository(fastify),
       user: new UserRepository(fastify),
-      notification: new NotificationRepository(fastify), 
+      notification: new NotificationRepository(fastify),
+      userNotification: new UserNotificationRepository(fastify),
     };
 
     fastify.decorate("repositories", repositories);

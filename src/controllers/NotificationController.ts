@@ -2,13 +2,13 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
   ICreateNotification,
   IUpdateNotification,
-  INotificationResponse,
 } from "../interfaces/notification";
 import { NotificationRepository } from "../repositories/NotificationRepository";
-import { updateNotification } from "../useCases/notifications/updateNotification";
 import { createNotification } from "../useCases/notifications/createNotification";
-import { getAllNotifications } from "../useCases/notifications/getAllNotification";
 import { deleteNotification } from "../useCases/notifications/deleteNotification";
+import { getAllNotifications } from "../useCases/notifications/getAllNotifications";
+import { getScheduledNotifications } from "../useCases/notifications/getScheduledNotifications";
+import { updateNotification } from "../useCases/notifications/updateNotification";
 
 export class NotificationController {
   private notificationRepository: NotificationRepository;
@@ -27,6 +27,9 @@ export class NotificationController {
         notificationData,
         this.notificationRepository
       );
+
+      // Armazenar a notificação criada para uso no hook onResponse
+      reply.notification = createdNotification;
 
       reply.status(201).send({
         success: true,
@@ -71,16 +74,30 @@ export class NotificationController {
   ) {
     try {
       const { uuid } = request.params;
-      const { activityId, date, message, standId, time, userId } = request.body;
+      const {
+        title,
+        message,
+        type,
+        isScheduled,
+        status,
+        date,
+        time,
+        expiresAt,
+        targetAudience,
+      } = request.body;
 
       const updateData = {
-        uuid, // ficar de olho
-        activityId,
-        date,
+        uuid,
+        title,
         message,
-        standId,
+        type,
+        isScheduled,
+        status,
+        date,
         time,
-        userId,
+        expiresAt,
+        targetAudience,
+        updatedAt: new Date(),
       };
 
       const updatedNotification = await updateNotification(
@@ -133,6 +150,29 @@ export class NotificationController {
       reply.status(200).send({
         success: true,
         message: "Notificação deletada com sucesso",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(500).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async getScheduledNotifications(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    try {
+      const notifications = await getScheduledNotifications(
+        request.server.notificationScheduler
+      );
+
+      reply.status(200).send({
+        success: true,
+        message: "Notificações agendadas encontradas",
+        data: notifications,
       });
     } catch (error) {
       if (error instanceof Error) {
