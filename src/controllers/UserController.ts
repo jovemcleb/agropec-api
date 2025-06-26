@@ -76,7 +76,7 @@ export class UserController {
       const { firstName, lastName, email, password } = request.body;
 
       const newUser = await createUser(
-        { firstName, lastName, email, password, role: "user" },
+        { firstName, lastName, email, password },
         this.userRepository
       );
 
