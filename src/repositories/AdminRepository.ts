@@ -1,15 +1,25 @@
 import bcrypt from "bcrypt";
 import { FastifyInstance } from "fastify";
+import { Collection } from "mongodb";
 import { IAdmin } from "../interfaces/admin";
 
 export class AdminRepository {
-  private collection;
+  private collection: Collection<IAdmin>;
 
-  constructor(fastify: FastifyInstance) {
-    this.collection = fastify.mongo.db?.collection<IAdmin>("admins");
+  private _omitPassword(admin: IAdmin): Omit<IAdmin, "password"> {
+    const { password, ...adminWithoutPassword } = admin;
+    return adminWithoutPassword;
   }
 
-  async create(admin: IAdmin) {
+  constructor(fastify: FastifyInstance) {
+    const collection = fastify.mongo.db?.collection<IAdmin>("admins");
+    if (!collection) {
+      throw new Error("MongoDB collection 'admins' not found.");
+    }
+    this.collection = collection;
+  }
+
+  async create(admin: IAdmin): Promise<Omit<IAdmin, "password">> {
     const hashedPassword = await bcrypt.hash(admin.password, 10);
 
     const newAdmin = {
@@ -17,58 +27,62 @@ export class AdminRepository {
       password: hashedPassword,
     };
 
-    const result = await this.collection?.insertOne(newAdmin);
+    const result = await this.collection.insertOne(newAdmin);
     if (!result || !result.acknowledged) {
       throw new Error("Failed to create admin");
     }
 
-    return {
-      _id: result.insertedId.toString(),
-      ...newAdmin,
-    };
+    return this._omitPassword(newAdmin);
   }
 
-  async findAll(): Promise<IAdmin[]> {
-    const admins = await this.collection?.find().toArray();
+  async findAll(): Promise<Omit<IAdmin, "password">[]> {
+    const admins = await this.collection.find().toArray();
+    return admins.map(this._omitPassword);
+  }
 
-    if (!admins) {
-      throw new Error("No admins found");
+  async findByEmail(email: string): Promise<IAdmin | null> {
+    return this.collection.findOne({ email });
+  }
+
+  async findByUuid(uuid: string): Promise<Omit<IAdmin, "password"> | null> {
+    const admin = await this.collection.findOne({ uuid });
+    if (!admin) {
+      return null;
     }
-
-    return admins;
+    return this._omitPassword(admin);
   }
-
-  async findByEmail(email: string): Promise<IAdmin | null | undefined> {
-    const admin = await this.collection?.findOne({ email });
-
+  async findByUuidWithPassword(uuid: string): Promise<IAdmin | null> {
+    const admin = await this.collection.findOne({ uuid });
     return admin;
   }
+  async update(
+    uuid: string,
+    admin: Partial<IAdmin>
+  ): Promise<Omit<IAdmin, "password">> {
+    const updatePayload: Partial<IAdmin> = { ...admin };
 
-  async findByUuid(uuid: string): Promise<IAdmin | null | undefined> {
-    const admin = await this.collection?.findOne({ uuid });
-
-    return admin;
-  }
-
-  async update(uuid: string, admin: Partial<IAdmin>) {
-    if (admin.password) {
-      admin.password = await bcrypt.hash(admin.password, 10);
+    if (updatePayload.password) {
+      updatePayload.password = await bcrypt.hash(updatePayload.password, 10);
     }
 
-    const updatedAdmin = await this.collection?.findOneAndUpdate(
+    const result = await this.collection.findOneAndUpdate(
       { uuid },
-      { $set: admin },
+      { $set: updatePayload },
       { returnDocument: "after" }
     );
 
-    return updatedAdmin;
+    if (!result) {
+      throw new Error("Admin not found for update");
+    }
+
+    return this._omitPassword(result);
   }
 
   async delete(uuid: string) {
-    const result = await this.collection?.deleteOne({ uuid });
+    const result = await this.collection.deleteOne({ uuid });
 
     if (!result || result.deletedCount === 0) {
-      throw new Error("Failed to delete admin");
+      throw new Error("Admin not found for deletion");
     }
 
     return {

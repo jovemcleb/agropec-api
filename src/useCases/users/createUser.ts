@@ -6,17 +6,24 @@ export async function createUser(
   payload: ICreateUser,
   userRepository: UserRepository
 ) {
-  const { firstName, lastName } = payload;
+  if (payload.role !== "user") {
+    throw new Error("A role para um novo usuário deve ser 'user'");
+  }
+  const { email } = payload;
 
+  const userExists = await userRepository.findByEmail(email);
+
+  if (userExists) {
+    throw new Error("Usuário com este email já existe");
+  }
   const userData = {
     uuid: randomUUID(),
-    firstName,
-    lastName,
-    activitiesId: [],
-    standsId: [],
+    ...payload,
   };
 
-  const user = await userRepository.create(userData);
-
-  return user;
+  const newUser = await userRepository.create(userData);
+  if (!newUser) {
+    throw new Error("Falha ao criar usuário");
+  }
+  return newUser;
 }

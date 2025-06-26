@@ -1,5 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { AdminDTO, IAdmin, ILoginInput } from "../interfaces/admin";
+import {
+  IAdmin,
+  ICreateAdmin,
+  ILoginInput,
+  IUpdateAdmin,
+} from "../interfaces/admin";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { createAdmin } from "../useCases/admin/createAdmin";
 import { deleteAdmin } from "../useCases/admin/deleteAdmin";
@@ -47,14 +52,14 @@ export class AdminController {
   }
 
   async signup(
-    request: FastifyRequest<{ Body: AdminDTO }>,
+    request: FastifyRequest<{ Body: ICreateAdmin }>,
     reply: FastifyReply
   ) {
     try {
-      const { email, firstName, lastName, password, role } = request.body;
+      const { email, firstName, lastName, password } = request.body;
 
       const newAdmin = await createAdmin(
-        { email, firstName, lastName, password, role },
+        { email, firstName, lastName, password, role: "admin" },
         this.adminRepository
       );
 
@@ -96,15 +101,18 @@ export class AdminController {
   }
 
   async update(
-    request: FastifyRequest<{ Body: IAdmin; Params: { uuid: string } }>,
+    request: FastifyRequest<{ Params: { uuid: string }; Body: IUpdateAdmin }>,
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
-      const { firstName, lastName, email, password, role } = request.body;
+      const { uuid: uuidParam } = request.params;
 
+      const { uuid, firstName, lastName, email, password } = request.body;
+      const requester = request.user as { uuid: string; role: string };
       const updatedAdmin = await updateAdmin(
-        { uuid, firstName, lastName, email, password, role },
+        requester,
+        uuidParam,
+        { uuid, firstName, lastName, email, password },
         this.adminRepository
       );
 
@@ -122,13 +130,13 @@ export class AdminController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
-
-      const deletedAdmin = await deleteAdmin(uuid, this.adminRepository);
-
-      if (!deletedAdmin) {
-        return reply.status(404).send({ error: "Admin not found" });
-      }
+      const { uuid: uuidParam } = request.params;
+      const requester = request.user as { uuid: string; role: string };
+      const deletedAdmin = await deleteAdmin(
+        requester,
+        uuidParam,
+        this.adminRepository
+      );
 
       reply.status(200).send(deletedAdmin);
     } catch (error) {

@@ -14,6 +14,7 @@ export const categoriesRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: CreateCategorySchema }),
       ],
     },
@@ -29,6 +30,7 @@ export const categoriesRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: CreateCategorySchema }),
       ],
     },
@@ -37,7 +39,7 @@ export const categoriesRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/categories/:uuid",
     {
-      preHandler: fastify.authenticate,
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     categoryController.delete.bind(categoryController)
   );

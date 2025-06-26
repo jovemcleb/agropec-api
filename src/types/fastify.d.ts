@@ -6,6 +6,7 @@ import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
 import { StandRepository } from "../repositories/StandRepository";
 import { ActivityRepository } from "../src/repositories/ActivityRepository";
+import { UserRole } from "../utils/user-role";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -25,6 +26,9 @@ declare module "fastify" {
     validateSchema: (
       schemas: ValidationSchemas
     ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorize: (
+      strategy: AuthorizationStrategy
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -33,12 +37,12 @@ declare module "@fastify/jwt" {
     payload: {
       uuid: string;
       email: string;
-      role: "admin" | "user" | "staff";
+      role: UserRole;
     };
     user: {
       uuid: string;
       email: string;
-      role: "admin" | "user" | "staff";
+      role: UserRole;
     };
   }
 }
