@@ -17,6 +17,7 @@ export const companiesRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({
           body: CreateCompanySchema,
         }),
@@ -31,6 +32,7 @@ export const companiesRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateCompanySchema }),
       ],
     },
@@ -39,7 +41,7 @@ export const companiesRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/companies/:uuid",
     {
-      preHandler: fastify.authenticate,
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     companyController.delete.bind(companyController)
   );

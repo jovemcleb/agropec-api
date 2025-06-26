@@ -4,6 +4,7 @@ import {
   INotification,
   INotificationResponse,
 } from "../interfaces/notification";
+import { AuthorizationStrategy } from "../plugins/authorization";
 import { WebSocketManager } from "../plugins/websocket";
 import { ActivityRepository } from "../repositories/ActivityRepository";
 import { AdminRepository } from "../repositories/AdminRepository";
@@ -16,6 +17,7 @@ import { UserRepository } from "../repositories/UserRepository";
 import { GlobalNotificationService } from "../services/GlobalNotificationService";
 import { NotificationScheduler } from "../services/NotificationScheduler";
 import { UserNotificationService } from "../services/UserNotificationService";
+import { UserRole } from "../utils/user-role";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -23,6 +25,9 @@ declare module "fastify" {
       request: FastifyRequest,
       reply: FastifyReply
     ) => Promise<void>;
+    authorize: (
+      strategy: AuthorizationStrategy
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     repositories: {
       activity: ActivityRepository;
       category: CategoryRepository;
@@ -49,6 +54,9 @@ declare module "fastify" {
 
   interface FastifyReply {
     notification?: INotificationResponse;
+    authorize: (
+      strategy: AuthorizationStrategy
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -57,12 +65,12 @@ declare module "@fastify/jwt" {
     payload: {
       uuid: string;
       email: string;
-      role: "admin" | "user" | "staff";
+      role: UserRole;
     };
     user: {
       uuid: string;
       email: string;
-      role: "admin" | "user" | "staff";
+      role: UserRole;
     };
   }
 }

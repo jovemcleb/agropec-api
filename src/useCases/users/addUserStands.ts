@@ -9,7 +9,7 @@ export async function addUserStands(
     throw new Error("Stands ID array cannot be empty");
   }
 
-  const user = await userRepository.addStand(uuid, standsId);
+  const user = await userRepository.addStands(uuid, standsId);
 
   if (!user) {
     throw new Error("Failed to add stands to user");

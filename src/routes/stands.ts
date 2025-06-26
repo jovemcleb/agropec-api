@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { StandController } from "../controllers/StandController";
+
 import {
   CreateStandSchema,
   ICreateStand,
@@ -43,6 +44,7 @@ export const standRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: CreateStandSchema }),
       ],
     },
@@ -54,6 +56,7 @@ export const standRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
+        fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateStandSchema }),
       ],
       onResponse: async (request, reply) => {
@@ -75,7 +78,7 @@ export const standRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/stands/:uuid",
     {
-      preHandler: fastify.authenticate,
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     standController.deleteStand.bind(standController)
   );

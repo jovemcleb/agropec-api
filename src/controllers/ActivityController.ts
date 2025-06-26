@@ -232,7 +232,7 @@ export class ActivityController {
       } = request.body;
 
       const updateData = {
-        uuid, // ficar de olho nesse uuid, ja que ja passamos o params, porém tava dando erro sem ele
+        uuid,
         name,
         description,
         categoryId,
@@ -243,7 +243,7 @@ export class ActivityController {
         imageUrl,
         endTime,
         startTime,
-      } 
+      };
       const updatedActivity = await updateActivity(
         uuid,
         updateData,

@@ -1,20 +1,28 @@
 import { AdminRepository } from "../../repositories/AdminRepository";
-
+interface IRequester {
+  uuid: string;
+  role: string;
+}
 export async function deleteAdmin(
-  uuid: string,
+  requester: IRequester,
+  uuidParam: string,
   adminRepository: AdminRepository
 ) {
-  const adminExists = await adminRepository.findByUuid(uuid);
+  const adminToDelete = await adminRepository.findByUuid(uuidParam);
 
-  if (!adminExists) {
-    throw new Error("Admin not found");
+  if (!adminToDelete) {
+    throw new Error("Admin not found to delete");
   }
 
-  const deletedAdmin = await adminRepository.delete(uuid);
-
-  if (!deletedAdmin) {
-    throw new Error("Failed to delete admin");
+  if (adminToDelete.role === "SUPER_ADMIN") {
+    throw new Error("Permission denied: Cannot delete a super administrator.");
   }
 
-  return { message: "Admin deleted successfully" };
+  if (adminToDelete.role === "admin" && requester.role !== "SUPER_ADMIN") {
+    throw new Error(
+      "Permission denied: Only a super administrator can delete other admins."
+    );
+  }
+
+  return adminRepository.delete(uuidParam);
 }

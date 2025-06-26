@@ -1,26 +1,36 @@
 import { IUpdateUser } from "../../interfaces/user";
 import { UserRepository } from "../../repositories/UserRepository";
+import { hash } from "bcrypt";
 
 export async function updateUser(
   uuidParam: string,
-  payload: IUpdateUser,
+  payload: Partial<IUpdateUser>,
   userRepository: UserRepository
 ) {
-  const { uuid, firstName, lastName } = payload;
+  const { firstName, lastName, email, password } = payload;
 
-  const userDB = await userRepository.findByUuid(uuid);
+  const userDB = await userRepository.findByUuidWithPassword(uuidParam);
 
-  if (uuidParam !== userDB?.uuid) {
-    throw new Error("You cannot update a user with a different UUID");
+  if (!userDB) {
+    throw new Error("User not found");
   }
 
-  const userData = {
-    uuid: userDB?.uuid,
-    firstName,
-    lastName,
-    activitiesId: userDB.activitiesId,
-    standsId: userDB.standsId,
+  if (email && email !== userDB.email) {
+    const existingUserWithNewEmail = await userRepository.findByEmail(email);
+
+    if (existingUserWithNewEmail) {
+      throw new Error("E-mail já está em uso por outro usuário");
+    }
+  }
+
+  const hashedPassword = password ? await hash(password, 10) : userDB.password;
+
+  const userDataToUpdate = {
+    firstName: firstName ?? userDB.firstName,
+    lastName: lastName ?? userDB.lastName,
+    email: email ?? userDB.email,
+    password: hashedPassword,
   };
 
-  return userRepository.update(userDB.uuid, userData);
+  return userRepository.update(userDB.uuid, userDataToUpdate);
 }

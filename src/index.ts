@@ -6,6 +6,8 @@ import {
   ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { errorHandler } from "./handlers/error-handler";
+
+import { authorization } from "./plugins/authorization";
 import { jwt } from "./plugins/jwt";
 import { mongo } from "./plugins/mongo";
 import { notifications } from "./plugins/notifications";
@@ -35,16 +37,16 @@ server.register(cors, {
 
 server.register(mongo);
 server.register(jwt);
+server.register(authorization);
 server.register(repositories);
 server.register(websocket);
 server.register(notifications);
+server.register(jwt);
 
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
 server.withTypeProvider<ZodTypeProvider>();
-
 server.setErrorHandler(errorHandler);
-
 server.register(routes);
 
 server.get("/", async (request, reply) => {
@@ -56,7 +58,7 @@ const start = async () => {
     await server.listen({ port: 3000, host: "0.0.0.0" });
     console.log("Server is running on http://localhost:3000");
   } catch (err) {
-    server.log.error(err);
+    console.error("!!! ERRO AO INICIAR O SERVIDOR !!!", err);
     process.exit(1);
   }
 };

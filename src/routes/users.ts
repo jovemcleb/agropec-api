@@ -3,7 +3,9 @@ import { UserController } from "../controllers/UserController";
 import {
   CreateUserSchema,
   ICreateUser,
+  ILoginInput,
   IUpdateUser,
+  LoginSchema,
   UpdateUserSchema,
   UserActivitiesSchema,
   UserStandsSchema,
@@ -14,12 +16,16 @@ export const usersRoutes: FastifyPluginAsync = async (
 ) => {
   const userController = new UserController(fastify.repositories.user);
 
-  fastify.get("/users", userController.findAll.bind(userController));
+  fastify.post<{ Body: ILoginInput }>(
+    "/users/login",
+    { preHandler: fastify.validateSchema({ body: LoginSchema }) },
+    userController.login.bind(userController)
+  );
 
   fastify.post<{ Body: ICreateUser }>(
-    "/users",
+    "/users/signup",
     { preHandler: fastify.validateSchema({ body: CreateUserSchema }) },
-    userController.create.bind(userController)
+    userController.signup.bind(userController)
   );
 
   fastify.patch<{
@@ -29,9 +35,9 @@ export const usersRoutes: FastifyPluginAsync = async (
     "/users/:uuid/activities",
     {
       preHandler: [
-        fastify.validateSchema({
-          body: UserActivitiesSchema,
-        }),
+        fastify.authenticate,
+        fastify.authorize("selfOrAnyAdmin"),
+        fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
       onResponse: async (request, reply) => {
         const { uuid } = request.params;
@@ -50,9 +56,9 @@ export const usersRoutes: FastifyPluginAsync = async (
     "/users/:uuid/stands",
     {
       preHandler: [
-        fastify.validateSchema({
-          body: UserStandsSchema,
-        }),
+        fastify.authenticate,
+        fastify.authorize("selfOrAnyAdmin"),
+        fastify.validateSchema({ body: UserStandsSchema }),
       ],
       onResponse: async (request, reply) => {
         const { uuid } = request.params;
@@ -64,16 +70,16 @@ export const usersRoutes: FastifyPluginAsync = async (
     userController.addStands.bind(userController)
   );
 
-  fastify.delete<{
+  fastify.patch<{
     Params: { uuid: string };
     Body: { activitiesId: string[] };
   }>(
-    "/users/:uuid/activities",
+    "/users/:uuid/activities/remove",
     {
       preHandler: [
-        fastify.validateSchema({
-          body: UserActivitiesSchema,
-        }),
+        fastify.authenticate,
+        fastify.authorize("selfOrAnyAdmin"),
+        fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
       onResponse: async (request, reply) => {
         const { uuid } = request.params;
@@ -85,16 +91,16 @@ export const usersRoutes: FastifyPluginAsync = async (
     userController.removeActivities.bind(userController)
   );
 
-  fastify.delete<{
+  fastify.patch<{
     Params: { uuid: string };
     Body: { standsId: string[] };
   }>(
-    "/users/:uuid/stands",
+    "/users/:uuid/stands/remove",
     {
       preHandler: [
-        fastify.validateSchema({
-          body: UserStandsSchema,
-        }),
+        fastify.authenticate,
+        fastify.authorize("selfOrAnyAdmin"),
+        fastify.validateSchema({ body: UserStandsSchema }),
       ],
       onResponse: async (request, reply) => {
         const { uuid } = request.params;
@@ -106,15 +112,23 @@ export const usersRoutes: FastifyPluginAsync = async (
     userController.removeStands.bind(userController)
   );
 
-  fastify.put<{ Params: { uuid: string }; Body: IUpdateUser }>(
+  fastify.patch<{ Params: { uuid: string }; Body: IUpdateUser }>(
     "/users/:uuid",
     {
-      preHandler: fastify.validateSchema({
-        body: UpdateUserSchema,
-      }),
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize("selfOrAnyAdmin"),
+        fastify.validateSchema({ body: UpdateUserSchema }),
+      ],
     },
     userController.update.bind(userController)
   );
 
-  fastify.delete("/users/:uuid", userController.delete.bind(userController));
+  fastify.delete<{ Params: { uuid: string } }>(
+    "/users/:uuid",
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("selfOrAnyAdmin")],
+    },
+    userController.delete.bind(userController)
+  );
 };

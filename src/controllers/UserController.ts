@@ -1,11 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { ICreateUser, IUpdateUser } from "../interfaces/user";
+import { ICreateUser, ILoginInput, IUpdateUser } from "../interfaces/user";
 import { UserRepository } from "../repositories/UserRepository";
 import { addUserActivities } from "../useCases/users/addUserActivities";
 import { addUserStands } from "../useCases/users/addUserStands";
 import { createUser } from "../useCases/users/createUser";
 import { deleteUser } from "../useCases/users/deleteUser";
 import { findAllUsers } from "../useCases/users/findAllUsers";
+import { loginCase } from "../useCases/users/loginCase";
 import { removeUserActivities } from "../useCases/users/removeUserActivities";
 import { removeUserStands } from "../useCases/users/removeUserStands";
 import { updateUser } from "../useCases/users/updateUser";
@@ -31,19 +32,68 @@ export class UserController {
     }
   }
 
-  async create(
+  async login(
+    request: FastifyRequest<{ Body: ILoginInput }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { email, password } = request.body;
+
+      const result = await loginCase({ email, password }, this.userRepository);
+
+      if (!result) {
+        return reply.status(401).send({ error: "Invalid email or password" });
+      }
+
+      const token = request.server.jwt.sign({
+        uuid: result.uuid,
+        email: result.email,
+        role: result.role,
+      });
+
+      reply.status(200).send({
+        user: {
+          uuid: result.uuid,
+          email: result.email,
+          role: result.role,
+        },
+        token,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(400).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async signup(
     request: FastifyRequest<{ Body: ICreateUser }>,
     reply: FastifyReply
   ) {
     try {
-      const { firstName, lastName } = request.body;
+      const { firstName, lastName, email, password } = request.body;
 
-      const user = await createUser(
-        { firstName, lastName },
+      const newUser = await createUser(
+        { firstName, lastName, email, password, role: "user" },
         this.userRepository
       );
 
-      reply.status(201).send(user);
+      const token = request.server.jwt.sign({
+        uuid: newUser.uuid,
+        email: newUser.email,
+        role: newUser.role,
+      });
+
+      reply.status(201).send({
+        user: {
+          uuid: newUser.uuid,
+          email: newUser.email,
+          role: newUser.role,
+        },
+        token,
+      });
     } catch (error) {
       if (error instanceof Error) {
         reply.status(400).send({ error: error.message });
@@ -61,11 +111,12 @@ export class UserController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
+      const { uuid: uuidParam } = request.params;
+
       const { activitiesId } = request.body;
 
       const userActivities = await addUserActivities(
-        uuid,
+        uuidParam,
         activitiesId,
         this.userRepository
       );
@@ -88,11 +139,12 @@ export class UserController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
+      const { uuid: uuidParam } = request.params;
+
       const { activitiesId } = request.body;
 
       const userActivities = await removeUserActivities(
-        uuid,
+        uuidParam,
         activitiesId,
         this.userRepository
       );
@@ -115,11 +167,12 @@ export class UserController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
+      const { uuid: uuidParam } = request.params;
+
       const { standsId } = request.body;
 
       const userStands = await addUserStands(
-        uuid,
+        uuidParam,
         standsId,
         this.userRepository
       );
@@ -141,11 +194,12 @@ export class UserController {
     reply: FastifyReply
   ) {
     try {
-      const { uuid } = request.params;
+      const { uuid: uuidParam } = request.params;
+
       const { standsId } = request.body;
 
       const userStands = await removeUserStands(
-        uuid,
+        uuidParam,
         standsId,
         this.userRepository
       );
@@ -169,11 +223,12 @@ export class UserController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const { uuid, firstName, lastName } = request.body;
+
+      const { uuid, firstName, lastName, email, password } = request.body;
 
       const user = await updateUser(
         uuidParam,
-        { uuid, firstName, lastName },
+        { uuid, firstName, lastName, email, password },
         this.userRepository
       );
 
@@ -190,19 +245,13 @@ export class UserController {
   async delete(
     request: FastifyRequest<{
       Params: { uuid: string };
-      Body: { uuid: string };
     }>,
     reply: FastifyReply
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const { uuid: uuidPayload } = request.body;
 
-      const user = await deleteUser(
-        uuidParam,
-        uuidPayload,
-        this.userRepository
-      );
+      const user = await deleteUser(uuidParam, this.userRepository);
 
       reply.status(200).send(user);
     } catch (error) {
