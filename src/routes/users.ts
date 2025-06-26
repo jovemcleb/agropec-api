@@ -16,6 +16,7 @@ export const usersRoutes: FastifyPluginAsync = async (
 ) => {
   const userController = new UserController(fastify.repositories.user);
 
+  // Rotas públicas
   fastify.post<{ Body: ILoginInput }>(
     "/users/login",
     { preHandler: fastify.validateSchema({ body: LoginSchema }) },
@@ -28,6 +29,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     userController.signup.bind(userController)
   );
 
+  // Rotas que requerem autenticação e autorização
   fastify.patch<{
     Params: { uuid: string };
     Body: { activitiesId: string[] };
@@ -36,7 +38,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("self"),
         fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
       onResponse: async (request, reply) => {
@@ -57,7 +59,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("self"),
         fastify.validateSchema({ body: UserStandsSchema }),
       ],
       onResponse: async (request, reply) => {
@@ -78,7 +80,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("self"),
         fastify.validateSchema({ body: UserActivitiesSchema }),
       ],
       onResponse: async (request, reply) => {
@@ -99,7 +101,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("self"),
         fastify.validateSchema({ body: UserStandsSchema }),
       ],
       onResponse: async (request, reply) => {
@@ -117,7 +119,7 @@ export const usersRoutes: FastifyPluginAsync = async (
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("self"),
         fastify.validateSchema({ body: UpdateUserSchema }),
       ],
     },
@@ -127,8 +129,17 @@ export const usersRoutes: FastifyPluginAsync = async (
   fastify.delete<{ Params: { uuid: string } }>(
     "/users/:uuid",
     {
-      preHandler: [fastify.authenticate, fastify.authorize("selfOrAnyAdmin")],
+      preHandler: [fastify.authenticate, fastify.authorize("self")],
     },
     userController.delete.bind(userController)
+  );
+
+  // Rota administrativa para listar todos os usuários
+  fastify.get(
+    "/users",
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    },
+    userController.findAll.bind(userController)
   );
 };

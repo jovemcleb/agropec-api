@@ -4,7 +4,9 @@ import fp from "fastify-plugin";
 export type AuthorizationStrategy =
   | "anyAdmin"
   | "selfOrAnyAdmin"
-  | "superAdmin";
+  | "superAdmin"
+  | "self"
+  | "authenticated";
 
 interface AuthenticatedUser {
   uuid: string;
@@ -28,14 +30,15 @@ async function authorizationPlugin(fastify: FastifyInstance) {
             case "superAdmin":
               if (user.role !== "SUPER_ADMIN") {
                 return reply.status(403).send({
-                  error: "Forbidden: SUPER_ADMIN access required.",
+                  error: "Acesso negado: requer permissão de SUPER_ADMIN.",
                 });
               }
               break;
+
             case "anyAdmin":
               if (!["SUPER_ADMIN", "admin"].includes(user.role)) {
                 return reply.status(403).send({
-                  error: "Forbidden: Admin level access required.",
+                  error: "Acesso negado: requer permissão de administrador.",
                 });
               }
               break;
@@ -47,18 +50,32 @@ async function authorizationPlugin(fastify: FastifyInstance) {
               if (!isAdminLevel && !isSelf) {
                 return reply.status(403).send({
                   error:
-                    "Forbidden: You don't have permission to perform this action.",
+                    "Acesso negado: você não tem permissão para esta ação.",
                 });
               }
               break;
 
+            case "self":
+              if (params.uuid !== user.uuid) {
+                return reply.status(403).send({
+                  error:
+                    "Acesso negado: você só pode acessar seus próprios recursos.",
+                });
+              }
+              break;
+
+            case "authenticated":
+              // Se chegou aqui, já está autenticado pelo middleware authenticate
+              break;
+
             default:
               return reply.status(500).send({
-                error: "Internal Server Error: Invalid authorization strategy.",
+                error: "Erro interno: estratégia de autorização inválida.",
               });
           }
         } catch (err) {
-          reply.status(500).send({ error: "Internal Server Error" });
+          request.log.error(err);
+          reply.status(500).send({ error: "Erro interno do servidor" });
         }
       }
   );

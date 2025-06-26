@@ -54,9 +54,6 @@ declare module "fastify" {
 
   interface FastifyReply {
     notification?: INotificationResponse;
-    authorize: (
-      strategy: AuthorizationStrategy
-    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 

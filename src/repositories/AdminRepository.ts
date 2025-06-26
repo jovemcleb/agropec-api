@@ -51,10 +51,11 @@ export class AdminRepository {
     }
     return this._omitPassword(admin);
   }
+
   async findByUuidWithPassword(uuid: string): Promise<IAdmin | null> {
-    const admin = await this.collection.findOne({ uuid });
-    return admin;
+    return this.collection.findOne({ uuid });
   }
+
   async update(
     uuid: string,
     admin: Partial<IAdmin>
