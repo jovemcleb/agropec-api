@@ -41,7 +41,6 @@ server.register(authorization);
 server.register(repositories);
 server.register(websocket);
 server.register(notifications);
-server.register(jwt);
 
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);

@@ -52,9 +52,17 @@ export class AdminController {
   ) {
     try {
       const { email, firstName, lastName, password } = request.body;
+      const requester = request.user as { uuid: string; role: string };
+
+      // Apenas SUPER_ADMIN pode criar novos admins
+      if (requester.role !== "SUPER_ADMIN") {
+        return reply.status(403).send({
+          error: "Apenas SUPER_ADMIN pode criar novos administradores",
+        });
+      }
 
       const newAdmin = await createAdmin(
-        { email, firstName, lastName, password, role: "admin" },
+        { email, firstName, lastName, password },
         this.adminRepository
       );
 
