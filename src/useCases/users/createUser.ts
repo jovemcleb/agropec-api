@@ -1,14 +1,11 @@
 import { randomUUID } from "crypto";
-import { ICreateUser } from "../../interfaces/user";
+import { ICreateUser, IUser } from "../../interfaces/user";
 import { UserRepository } from "../../repositories/UserRepository";
 
 export async function createUser(
   payload: ICreateUser,
   userRepository: UserRepository
 ) {
-  if (payload.role !== "user") {
-    throw new Error("A role para um novo usuário deve ser 'user'");
-  }
   const { email } = payload;
 
   const userExists = await userRepository.findByEmail(email);
@@ -16,9 +13,13 @@ export async function createUser(
   if (userExists) {
     throw new Error("Usuário com este email já existe");
   }
-  const userData = {
+
+  const userData: IUser = {
     uuid: randomUUID(),
     ...payload,
+    role: "user",
+    activitiesId: [],
+    standsId: [],
   };
 
   const newUser = await userRepository.create(userData);

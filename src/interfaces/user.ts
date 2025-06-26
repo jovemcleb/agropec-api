@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { UserRoleSchema } from "../utils/user-role";
 
-
 export type IUser = z.infer<typeof UserSchema>;
 export type ICreateUser = z.infer<typeof CreateUserSchema>;
 export type IUpdateUser = z.infer<typeof UpdateUserSchema>;
@@ -17,11 +16,12 @@ export const UserSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters long"),
   activitiesId: z.array(z.string().uuid()).optional(),
   standsId: z.array(z.string().uuid()).optional(),
-  role: UserRoleSchema.default("user"), 
+  role: UserRoleSchema.default("user"),
 });
 
 export const CreateUserSchema = UserSchema.omit({
   uuid: true,
+  role: true,
 });
 
 export const UpdateUserSchema = z.object({
