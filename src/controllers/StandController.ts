@@ -1,22 +1,27 @@
+import { randomUUID } from "crypto";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { getAllStands } from "../useCases/stands/getAllStands";
+import {
+  CreateStandSchema,
+  IUpdateStand,
+  IUpdateStandImages,
+} from "../interfaces/stand";
 import { StandRepository } from "../repositories/StandRepository";
+import { ImageUploadService } from "../services/ImageUploadService";
 import { createStand } from "../useCases/stands/createStand";
-import { ICreateStand, IUpdateStand } from "../interfaces/stand";
-import { getStandsByCategory } from "../useCases/stands/getStandsByCategory";
+import { deleteStand } from "../useCases/stands/deleteStand";
+import { getAllStands } from "../useCases/stands/getAllStands";
 import { getStandByName } from "../useCases/stands/getStandByName";
 import { getStandByUuid } from "../useCases/stands/getStandByUuid";
+import { getStandsByCategory } from "../useCases/stands/getStandsByCategory";
 import { getStandsByDate } from "../useCases/stands/getStandsByDate";
 import { getStandsByInterest } from "../useCases/stands/getStandsByInterest";
-import { deleteStand } from "../useCases/stands/deleteStand";
 import { updateStand } from "../useCases/stands/updateStand";
 
 export class StandController {
-  private standRepository: StandRepository;
-
-  constructor(standRepository: StandRepository) {
-    this.standRepository = standRepository;
-  }
+  constructor(
+    private standRepository: StandRepository,
+    private imageUploadService: ImageUploadService
+  ) {}
 
   async getAllStands(request: FastifyRequest, reply: FastifyReply) {
     try {
@@ -24,7 +29,7 @@ export class StandController {
 
       reply.status(200).send({
         success: true,
-        message: "Atividades encontradas",
+        message: "Stands encontrados",
         data: stands,
       });
     } catch (error) {
@@ -166,6 +171,7 @@ export class StandController {
       }
     }
   }
+
   async getStandsByInterest(
     request: FastifyRequest<{ Params: { interest: string } }>,
     reply: FastifyReply
@@ -196,13 +202,27 @@ export class StandController {
       }
     }
   }
-  async createStand(
-    request: FastifyRequest<{ Body: ICreateStand }>,
-    reply: FastifyReply
-  ) {
+
+  async createStand(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const standData = request.body;
-      const stand = await createStand(standData, this.standRepository);
+      // Gerar UUID antes do upload
+      const standUuid = randomUUID();
+
+      // Processar imagem e dados do stand, passando o UUID
+      const standData = await this.imageUploadService.handleStandCreation(
+        request,
+        standUuid
+      );
+
+      // Validar dados
+      const validatedData = CreateStandSchema.parse(standData);
+
+      // Criar stand com o UUID gerado
+      const stand = await createStand(
+        validatedData,
+        this.standRepository,
+        standUuid
+      );
 
       reply.status(201).send({
         success: true,
@@ -210,46 +230,49 @@ export class StandController {
         data: stand,
       });
     } catch (error) {
+      console.error("Erro ao criar stand:", error);
       if (error instanceof Error) {
-        reply.status(500).send({ error: error.message });
+        reply.status(500).send({
+          success: false,
+          message: "Erro ao criar stand",
+          error: error.message,
+        });
       } else {
-        reply.status(500).send({ error: "Internal Server Error" });
+        reply.status(500).send({
+          success: false,
+          message: "Erro interno ao criar stand",
+        });
       }
     }
   }
+
   async updateStand(
     request: FastifyRequest<{ Body: IUpdateStand; Params: { uuid: string } }>,
     reply: FastifyReply
   ) {
     try {
       const { uuid } = request.params;
-      const {
-        categoryId,
-        companyId,
-        date,
-        description,
-        imageUrl,
-        latitude,
-        longitude,
-        name,
-        openingHours,
-      } = request.body;
 
-      const updateData = {
-        categoryId,
-        companyId,
-        date,
-        description,
-        imageUrl,
-        latitude,
-        longitude,
-        name,
-        openingHours,
-        uuid,
-      };
+      // Buscar stand atual para verificar imagens existentes
+      const currentStand = await this.standRepository.getByUuid(uuid);
+      if (!currentStand) {
+        reply.status(404).send({
+          success: false,
+          message: `Stand não encontrado com UUID: ${uuid}`,
+        });
+        return;
+      }
+
+      // Processar novas imagens se fornecidas, passando o UUID do stand
+      const standData = await this.imageUploadService.handleStandUpdate(
+        request,
+        currentStand.imageUrls,
+        uuid
+      );
+
       const updatedStand = await updateStand(
         uuid,
-        updateData,
+        standData,
         this.standRepository
       );
 
@@ -282,6 +305,22 @@ export class StandController {
     try {
       const { uuid } = request.params;
 
+      // Buscar stand para obter URLs das imagens
+      const stand = await this.standRepository.getByUuid(uuid);
+      if (!stand) {
+        reply.status(404).send({
+          success: false,
+          message: `Stand não encontrado com UUID: ${uuid}`,
+        });
+        return;
+      }
+
+      // Deletar as imagens do S3 se existirem
+      if (stand.imageUrls && stand.imageUrls.length > 0) {
+        await this.imageUploadService.deleteImages(stand.imageUrls);
+      }
+
+      // Deletar o stand do banco de dados
       const deleted = await deleteStand(uuid, this.standRepository);
 
       if (!deleted) {
@@ -301,6 +340,96 @@ export class StandController {
         reply.status(500).send({ error: error.message });
       } else {
         reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async updateStandImage(
+    request: FastifyRequest<{
+      Params: { uuid: string };
+      Body: IUpdateStandImages;
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { uuid } = request.params;
+
+      // Buscar stand atual para verificar imagens existentes
+      const currentStand = await this.standRepository.getByUuid(uuid);
+      if (!currentStand) {
+        reply.status(404).send({
+          success: false,
+          message: `Stand não encontrado com UUID: ${uuid}`,
+        });
+        return;
+      }
+
+      // Extrair imageIds do multipart/form-data se for multipart
+      let newImageIds: string[] | undefined;
+
+      if (request.isMultipart()) {
+        // Para multipart, vamos extrair os IDs antes de passar para handleStandUpdate
+        // Primeiro vamos precisar de uma forma de extrair apenas os campos sem consumir o stream
+        // Por enquanto, vamos deixar handleStandUpdate lidar com tudo
+        newImageIds = undefined; // Será extraído dentro do handleStandUpdate
+      } else {
+        // Se não é multipart, usar request.body
+        newImageIds = request.body?.imageIds;
+      }
+
+      // Se não é multipart e não foram fornecidos IDs, retornar erro
+      if (
+        !request.isMultipart() &&
+        (!newImageIds || newImageIds.length === 0)
+      ) {
+        reply.status(400).send({
+          success: false,
+          message: "Nenhuma imagem fornecida para atualização",
+        });
+        return;
+      }
+
+      // Processar novas imagens se fornecidas, passando o UUID do stand e IDs das imagens
+      const uploadResult = await this.imageUploadService.handleStandUpdate(
+        request,
+        currentStand.imageUrls || [],
+        uuid,
+        newImageIds
+      );
+
+      // Atualizar apenas as imageUrls do stand
+      const updatedStand = await updateStand(
+        uuid,
+        { imageUrls: uploadResult.imageUrls },
+        this.standRepository
+      );
+
+      if (!updatedStand) {
+        reply.status(404).send({
+          success: false,
+          message: `Stand não encontrado com UUID: ${uuid}`,
+        });
+        return;
+      }
+
+      reply.status(200).send({
+        success: true,
+        message: "Imagens do stand atualizadas com sucesso",
+        data: updatedStand,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar imagens do stand:", error);
+      if (error instanceof Error) {
+        reply.status(500).send({
+          success: false,
+          message: "Erro ao atualizar imagens do stand",
+          error: error.message,
+        });
+      } else {
+        reply.status(500).send({
+          success: false,
+          message: "Erro interno ao atualizar imagens do stand",
+        });
       }
     }
   }
