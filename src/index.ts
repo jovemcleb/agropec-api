@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import "dotenv/config";
 import Fastify from "fastify";
 import {
   serializerCompiler,
@@ -8,10 +9,12 @@ import {
 import { errorHandler } from "./handlers/error-handler";
 
 import { authorization } from "./plugins/authorization";
+import { imageUpload } from "./plugins/image-upload";
 import { jwt } from "./plugins/jwt";
 import { mongo } from "./plugins/mongo";
 import { notifications } from "./plugins/notifications";
 import { repositories } from "./plugins/repositories";
+import { s3 } from "./plugins/s3";
 import { websocket } from "./plugins/websocket";
 import { routes } from "./routes";
 
@@ -30,9 +33,21 @@ const server = Fastify({
 
 server.register(cors, {
   origin: ["http://localhost:3000", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "x-user-id",
+    "Origin",
+    "Accept",
+    "Content-Length",
+    "x-requested-with",
+  ],
+  exposedHeaders: ["Content-Disposition"],
   credentials: true,
+  maxAge: 86400, // 24 horas em segundos
+  preflight: true,
+  strictPreflight: false,
 });
 
 server.register(mongo);
@@ -41,6 +56,8 @@ server.register(authorization);
 server.register(repositories);
 server.register(websocket);
 server.register(notifications);
+server.register(s3);
+server.register(imageUpload);
 
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
