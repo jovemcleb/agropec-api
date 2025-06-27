@@ -1,10 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { StandController } from "../controllers/StandController";
-
 import {
-  CreateStandSchema,
-  ICreateStand,
+  ICreateStandRequest,
   IUpdateStand,
+  IUpdateStandImages,
   UpdateStandSchema,
 } from "../interfaces/stand";
 
@@ -16,7 +15,10 @@ export const standRoutes: FastifyPluginAsync = async (
     throw new Error("Stand repository is not available.");
   }
 
-  const standController = new StandController(fastify.repositories.stand);
+  const standController = new StandController(
+    fastify.repositories.stand,
+    fastify.imageUpload
+  );
 
   fastify.get("/stands", standController.getAllStands.bind(standController));
   fastify.get(
@@ -39,17 +41,11 @@ export const standRoutes: FastifyPluginAsync = async (
     "/stands/interest/:interest",
     standController.getStandsByInterest.bind(standController)
   );
-  fastify.post<{ Body: ICreateStand }>(
-    "/stands",
-    {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize("anyAdmin"),
-        fastify.validateSchema({ body: CreateStandSchema }),
-      ],
-    },
-    standController.createStand.bind(standController)
-  );
+
+  fastify.post<{ Body: ICreateStandRequest }>("/stands", {
+    preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    handler: standController.createStand.bind(standController),
+  });
 
   fastify.put<{ Body: IUpdateStand; Params: { uuid: string } }>(
     "/stands/:uuid",
@@ -60,12 +56,10 @@ export const standRoutes: FastifyPluginAsync = async (
         fastify.validateSchema({ body: UpdateStandSchema }),
       ],
       onResponse: async (request, reply) => {
-        // Buscar usuários que têm este stand usando o novo método
         const users = await fastify.repositories.user.findByStand(
           request.params.uuid
         );
 
-        // Reagendar notificações para cada usuário afetado
         for (const user of users) {
           await fastify.notificationScheduler.scheduleUserEventNotifications(
             user.uuid
@@ -75,11 +69,23 @@ export const standRoutes: FastifyPluginAsync = async (
     },
     standController.updateStand.bind(standController)
   );
+
   fastify.delete<{ Params: { uuid: string } }>(
     "/stands/:uuid",
     {
       preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     standController.deleteStand.bind(standController)
+  );
+
+  fastify.patch<{
+    Params: { uuid: string };
+    Body: IUpdateStandImages;
+  }>(
+    "/stands/:uuid/images",
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    },
+    standController.updateStandImage.bind(standController)
   );
 };
