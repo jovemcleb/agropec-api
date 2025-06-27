@@ -7,7 +7,7 @@ export const jwt = fp(
     fastify.register(fastifyJwt, {
       secret: process.env.JWT_SECRET || "oSistemaEhFalho",
       sign: {
-        expiresIn: "1d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
       },
     });
 

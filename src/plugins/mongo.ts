@@ -3,9 +3,12 @@ import { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 
 export const mongo = fp(async (fastify: FastifyInstance) => {
+  const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017";
+  const mongoDb = process.env.MONGODB_DB || "agropec";
+
   fastify.register(mongodb, {
-    url: "mongodb://localhost:27017",
-    database: "agropec",
+    url: mongoUri,
+    database: mongoDb,
     forceClose: true,
   });
 });
