@@ -15,7 +15,7 @@ export interface IActivityRepository {
   getByName(name: string): Promise<IActivityResponse[]>;
   getByDate(date: string): Promise<IActivityResponse[]>;
   getByInterest(interest: string): Promise<IActivityResponse[]>;
-  create(activity: ICreateActivity): Promise<IActivityResponse>;
+  create(activity: ICreateActivity, uuid?: string): Promise<IActivityResponse>;
   update(
     uuid: string,
     activity: Partial<IUpdateActivity>
@@ -110,9 +110,12 @@ export class ActivityRepository implements IActivityRepository {
     })) as IActivityResponse[];
   }
 
-  async create(activity: ICreateActivity): Promise<IActivityResponse> {
+  async create(
+    activity: ICreateActivity,
+    uuid?: string
+  ): Promise<IActivityResponse> {
     const activityData = {
-      uuid: randomUUID(),
+      uuid: uuid || randomUUID(),
       ...activity,
       createdAt: new Date(),
       updatedAt: new Date(),

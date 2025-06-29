@@ -274,7 +274,7 @@ export class NotificationScheduler {
         const schedulePromises = Array.from(stands.values()).map((stand) => {
           const formattedDate = convertDateFormat(stand.date);
           const eventDateTime = new Date(
-            `${formattedDate}T${stand.openingHours.openingTime}`
+            `${formattedDate}T${stand.openingTime}`
           );
 
           if (eventDateTime > now) {
@@ -283,7 +283,7 @@ export class NotificationScheduler {
               stand.uuid,
               stand.name,
               stand.date,
-              stand.openingHours.openingTime,
+              stand.openingTime,
               "stand"
             );
           }

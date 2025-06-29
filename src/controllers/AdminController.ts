@@ -33,6 +33,8 @@ export class AdminController {
         admin: {
           uuid: result.uuid,
           email: result.email,
+          firstName: result.firstName,
+          lastName: result.lastName,
           role: result.role,
         },
         token,
@@ -76,6 +78,8 @@ export class AdminController {
         admin: {
           uuid: newAdmin.uuid,
           email: newAdmin.email,
+          firstName: newAdmin.firstName,
+          lastName: newAdmin.lastName,
           role: newAdmin.role,
         },
         token,

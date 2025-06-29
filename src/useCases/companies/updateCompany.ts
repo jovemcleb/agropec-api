@@ -1,13 +1,11 @@
 import { IUpdateCompany } from "../../interfaces/company";
-import {
-  ICompanyRepository,
-} from "../../repositories/CompanyRepository";
+import { CompanyRepository } from "../../repositories/CompanyRepository";
 import { handleError } from "../../utils/formatter-activity";
 
 export async function updateCompany(
   uuid: string,
   updateData: IUpdateCompany,
-  companyRepository: ICompanyRepository
+  companyRepository: CompanyRepository
 ) {
   try {
     return await companyRepository.update(uuid, updateData);

@@ -1,12 +1,12 @@
 import { FastifyPluginAsync } from "fastify";
+import { validationPlugin } from "../plugins/validation";
+import { activityRoutes } from "./activities";
 import { adminRoutes } from "./admin";
 import { categoriesRoutes } from "./categories";
 import { companiesRoutes } from "./companies";
+import { notificationsRoutes } from "./notifications";
 import { standRoutes } from "./stands";
 import { usersRoutes } from "./users";
-import { activityRoutes } from "./activities";
-import { validationPlugin } from "../plugins/validation";
-import { notificationsRoutes } from "./notifications";
 
 export const routes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(validationPlugin);
@@ -16,5 +16,5 @@ export const routes: FastifyPluginAsync = async (fastify) => {
   fastify.register(usersRoutes);
   fastify.register(standRoutes);
   fastify.register(activityRoutes);
-  fastify.register(notificationsRoutes)
+  fastify.register(notificationsRoutes);
 };

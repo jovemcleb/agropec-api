@@ -10,13 +10,16 @@ import {
 
 export interface IStandRepository {
   getAll(): Promise<IStandResponse[]>;
-  create(stand: ICreateStand): Promise<IStandResponse>;
+  create(stand: ICreateStand, uuid?: string): Promise<IStandResponse>;
   getByCategory(category: string): Promise<IStandResponse[]>;
   getByName(name: string): Promise<IStandResponse | null>;
   getByUuid(uuid: string): Promise<IStandResponse | null>;
   getByDate(date: Date): Promise<IStandResponse[]>;
   getByInterest(interest: string): Promise<IStandResponse[]>;
-  update(uuid: string, stand: Partial<IUpdateStand>): Promise<IStand | null>;
+  update(
+    uuid: string,
+    stand: Partial<IUpdateStand>
+  ): Promise<IStandResponse | null>;
   delete(uuid: string): Promise<boolean>;
 }
 export class StandRepository {
@@ -99,10 +102,10 @@ export class StandRepository {
       _id: doc._id.toString(),
     })) as IStandResponse[];
   }
-  async create(stand: ICreateStand): Promise<IStandResponse> {
+  async create(stand: ICreateStand, uuid?: string): Promise<IStandResponse> {
     const standData = {
       ...stand,
-      uuid: randomUUID(),
+      uuid: uuid || randomUUID(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -119,7 +122,10 @@ export class StandRepository {
     };
   }
 
-  async update(uuid: string, standData: IUpdateStand): Promise<IStand | null> {
+  async update(
+    uuid: string,
+    standData: Partial<IUpdateStand>
+  ): Promise<IStandResponse | null> {
     const updateData = {
       ...standData,
       updatedAt: new Date(),
@@ -135,7 +141,10 @@ export class StandRepository {
       return null;
     }
 
-    return result;
+    return {
+      ...result,
+      _id: result._id.toString(),
+    } as IStandResponse;
   }
   async delete(uuid: string): Promise<boolean> {
     const result = await this.collection.deleteOne({ uuid });

@@ -12,7 +12,9 @@ export const ActivitySchema = z.object({
     .number()
     .min(-180)
     .max(180, "Longitude deve estar entre -180 e 180"),
-  imageUrl: z.string().url("URL da imagem inválida").optional(),
+  imageUrls: z
+    .array(z.string().url("URL da imagem deve ser uma URL válida"))
+    .optional(),
   companyId: z.string().min(1, "ID da empresa é obrigatório"),
   date: z
     .string()
@@ -42,14 +44,34 @@ export const ActivitySchema = z.object({
   }),
 });
 
-export const CreateActivitySchema = ActivitySchema.omit({ uuid: true });
-export const UpdateActivitySchema = ActivitySchema.partial().required({
+// Schema para validação do request multipart/form-data
+export const CreateActivityRequestSchema = ActivitySchema.omit({
   uuid: true,
+  imageUrls: true,
+});
+
+// Schema para criação no banco de dados (após upload da imagem)
+export const CreateActivitySchema = ActivitySchema.omit({ uuid: true });
+
+// Schema para atualização - todos os campos são opcionais exceto uuid que é excluído
+export const UpdateActivitySchema = ActivitySchema.omit({
+  uuid: true,
+}).partial();
+
+// Schema para atualização de imagens
+export const UpdateActivityImagesSchema = z.object({
+  imageIds: z
+    .array(z.string().uuid("ID da imagem deve ser um UUID válido"))
+    .optional(),
 });
 
 export type IActivity = z.infer<typeof ActivitySchema>;
 export type ICreateActivity = z.infer<typeof CreateActivitySchema>;
+export type ICreateActivityRequest = z.infer<
+  typeof CreateActivityRequestSchema
+>;
 export type IUpdateActivity = z.infer<typeof UpdateActivitySchema>;
+export type IUpdateActivityImages = z.infer<typeof UpdateActivityImagesSchema>;
 
 export interface IActivityResponse extends IActivity {
   _id: string;

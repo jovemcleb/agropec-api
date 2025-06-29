@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { ActivityController } from "../controllers/ActivityController";
 import {
-  CreateActivitySchema,
   ICreateActivity,
   IUpdateActivity,
+  IUpdateActivityImages,
   UpdateActivitySchema,
 } from "../interfaces/activity";
 
@@ -11,7 +11,8 @@ export const activityRoutes: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
   const activityController = new ActivityController(
-    fastify.repositories.activity
+    fastify.repositories.activity,
+    fastify.imageUpload
   );
 
   fastify.get(
@@ -44,17 +45,10 @@ export const activityRoutes: FastifyPluginAsync = async (
     activityController.getActivitiesByInterest.bind(activityController)
   );
 
-  fastify.post<{ Body: ICreateActivity }>(
-    "/activities",
-    {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize("anyAdmin"),
-        fastify.validateSchema({ body: CreateActivitySchema }),
-      ],
-    },
-    activityController.createActivity.bind(activityController)
-  );
+  fastify.post<{ Body: ICreateActivity }>("/activities", {
+    preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    handler: activityController.createActivity.bind(activityController),
+  });
 
   fastify.put<{
     Body: IUpdateActivity;
@@ -68,12 +62,10 @@ export const activityRoutes: FastifyPluginAsync = async (
         fastify.validateSchema({ body: UpdateActivitySchema }),
       ],
       onResponse: async (request, reply) => {
-        // Buscar usuários que têm esta atividade usando o novo método
         const users = await fastify.repositories.user.findByActivity(
           request.params.uuid
         );
 
-        // Reagendar notificações para cada usuário afetado
         for (const user of users) {
           await fastify.notificationScheduler.scheduleUserEventNotifications(
             user.uuid
@@ -90,5 +82,16 @@ export const activityRoutes: FastifyPluginAsync = async (
       preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     activityController.deleteActivity.bind(activityController)
+  );
+
+  fastify.patch<{
+    Params: { uuid: string };
+    Body: IUpdateActivityImages;
+  }>(
+    "/activities/:uuid/images",
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    },
+    activityController.updateActivityImage.bind(activityController)
   );
 };
