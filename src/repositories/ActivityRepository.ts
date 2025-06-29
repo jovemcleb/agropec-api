@@ -11,6 +11,7 @@ import {
 export interface IActivityRepository {
   getAll(): Promise<IActivityResponse[]>;
   getByUuid(uuid: string): Promise<WithId<IActivity> | null>;
+  getManyByUuids(uuids: string[]): Promise<IActivityResponse[]>;
   getByCategory(categoryId: string): Promise<IActivityResponse[]>;
   getByName(name: string): Promise<IActivityResponse[]>;
   getByDate(date: string): Promise<IActivityResponse[]>;
@@ -50,6 +51,22 @@ export class ActivityRepository implements IActivityRepository {
     if (!result) return null;
 
     return result;
+  }
+  async getManyByUuids(uuids: string[]): Promise<IActivityResponse[]> {
+    if (uuids.length === 0) {
+      return [];
+    }
+    
+    // Usa o operador $in do MongoDB para buscar todos os documentos de uma vez
+    const results = await this.collection.find({ 
+      uuid: { $in: uuids } 
+    }).toArray();
+
+    // Reutiliza o seu helper de mapeamento ou mapeia diretamente aqui
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IActivityResponse[];
   }
 
   async getByCategory(categoryId: string): Promise<IActivityResponse[]> {

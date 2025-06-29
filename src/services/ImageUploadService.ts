@@ -1,6 +1,7 @@
 import { FastifyRequest } from "fastify";
 import { ICreateActivity, IUpdateActivity } from "../interfaces/activity";
 import { ICreateStand, IUpdateStand } from "../interfaces/stand";
+import { ICreateHighlight } from "../interfaces/highlight";
 import { processUpload } from "../utils/upload";
 import { S3Service } from "./S3Service";
 
@@ -18,6 +19,12 @@ export class ImageUploadService {
   };
 
   private readonly activityConfig: ImageConfig = {
+    width: 1920,
+    height: 1080,
+    quality: 80,
+  };
+
+  private readonly highlightConfig: ImageConfig = {
     width: 1920,
     height: 1080,
     quality: 80,
@@ -503,6 +510,47 @@ export class ImageUploadService {
       imageUrls: activityData.imageUrls,
     });
     return activityData;
+  }
+
+  async handleHighlightCreation(
+    request: FastifyRequest,
+    highlightUuid: string
+  ): Promise<ICreateHighlight> {
+    const uploadResult = await processUpload(request, this.highlightConfig);
+    let fields = {};
+    let imageUrl: string | undefined;
+
+    if (uploadResult && uploadResult.images.length > 0) {
+      console.log(
+        `📸 Upload de imagem para destaque ${highlightUuid}:`
+      );
+
+      const image = uploadResult.images[0]; // Highlights só têm uma imagem
+      console.log(`   - Hash: ${image.hash}`);
+      console.log(`   - Tamanho: ${image.buffer.length} bytes`);
+      console.log(`   - Tipo: ${image.mimetype}`);
+
+      const imageUrls = await this.uploadImages(
+        [image],
+        "highlights",
+        highlightUuid
+      );
+      
+      imageUrl = imageUrls[0]; // Pegar a primeira (e única) URL
+      fields = uploadResult.fields;
+    } else {
+      console.log(
+        "⚠️ Nenhuma imagem detectada para destaque, processando apenas campos do formulário"
+      );
+      fields = {};
+    }
+
+    const highlightData: ICreateHighlight = {
+      ...(fields as ICreateHighlight),
+      ...(imageUrl && { imageUrl }),
+    };
+
+    return highlightData;
   }
 
   async deleteImages(imageUrls: string[]): Promise<void> {

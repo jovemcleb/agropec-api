@@ -5,6 +5,7 @@ import { ActivityRepository } from "../repositories/ActivityRepository";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
+import { HighlightRepository } from "../repositories/HighlightRepository";
 import { NotificationRepository } from "../repositories/NotificationRepository";
 import { StandRepository } from "../repositories/StandRepository";
 import { UserNotificationRepository } from "../repositories/UserNotificationRepository";
@@ -25,6 +26,7 @@ const repositoriesPlugin: FastifyPluginAsync = async (
       activity: new ActivityRepository(fastify),
       category: new CategoryRepository(fastify),
       company: new CompanyRepository(fastify),
+      highlight: new HighlightRepository(fastify),
       stand: new StandRepository(fastify),
       admin: new AdminRepository(fastify),
       user: new UserRepository(fastify),
