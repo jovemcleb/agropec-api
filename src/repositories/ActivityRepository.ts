@@ -4,6 +4,7 @@ import { Collection, WithId } from "mongodb";
 import {
   IActivity,
   IActivityResponse,
+  IActivityWithCompanyResponse,
   ICreateActivity,
   IUpdateActivity,
 } from "../interfaces/activity";
@@ -11,6 +12,9 @@ import {
 export interface IActivityRepository {
   getAll(): Promise<IActivityResponse[]>;
   getByUuid(uuid: string): Promise<WithId<IActivity> | null>;
+  getByUuidWithCompany(
+    uuid: string
+  ): Promise<IActivityWithCompanyResponse | null>;
   getByCategory(categoryId: string): Promise<IActivityResponse[]>;
   getByName(name: string): Promise<IActivityResponse[]>;
   getByDate(date: string): Promise<IActivityResponse[]>;
@@ -50,6 +54,55 @@ export class ActivityRepository implements IActivityRepository {
     if (!result) return null;
 
     return result;
+  }
+
+  async getByUuidWithCompany(
+    uuid: string
+  ): Promise<IActivityWithCompanyResponse | null> {
+    const pipeline = [
+      { $match: { uuid } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "companyId",
+          foreignField: "uuid",
+          as: "companyData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$companyData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $project: {
+          _id: { $toString: "$_id" },
+          uuid: 1,
+          name: 1,
+          description: 1,
+          categoryId: 1,
+          latitude: 1,
+          longitude: 1,
+          imageUrls: 1,
+          date: 1,
+          startTime: 1,
+          endTime: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          company: {
+            uuid: "$companyData.uuid",
+            name: "$companyData.name",
+            description: "$companyData.description",
+          },
+        },
+      },
+    ];
+
+    const results = await this.collection.aggregate(pipeline).toArray();
+    return results.length > 0
+      ? (results[0] as IActivityWithCompanyResponse)
+      : null;
   }
 
   async getByCategory(categoryId: string): Promise<IActivityResponse[]> {

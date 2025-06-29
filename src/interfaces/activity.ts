@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ICompany } from "./company";
 
 const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
@@ -75,6 +76,14 @@ export type IUpdateActivityImages = z.infer<typeof UpdateActivityImagesSchema>;
 
 export interface IActivityResponse extends IActivity {
   _id: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IActivityWithCompanyResponse
+  extends Omit<IActivity, "companyId"> {
+  _id: string;
+  company: ICompany;
   createdAt?: Date;
   updatedAt?: Date;
 }
