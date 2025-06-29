@@ -22,6 +22,8 @@ export const UserSchema = z.object({
 export const CreateUserSchema = UserSchema.omit({
   uuid: true,
   role: true,
+  activitiesId: true,
+  standsId: true,
 });
 
 export const UpdateUserSchema = z.object({
