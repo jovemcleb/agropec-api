@@ -21,7 +21,7 @@ import { ImageUploadService } from "../services/ImageUploadService";
 import { NotificationScheduler } from "../services/NotificationScheduler";
 import { S3Service } from "../services/S3Service";
 import { UserNotificationService } from "../services/UserNotificationService";
-import { UserRole } from "../utils/user-role";
+import { SystemRole } from "../utils/user-role";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -69,12 +69,12 @@ declare module "@fastify/jwt" {
     payload: {
       uuid: string;
       email: string;
-      role: UserRole;
+      role: SystemRole;
     };
     user: {
       uuid: string;
       email: string;
-      role: UserRole;
+      role: SystemRole;
     };
   }
 }

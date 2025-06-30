@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
-import { AdminRoleSchema, ICreateAdmin } from "../../interfaces/admin";
+import { ICreateAdmin } from "../../interfaces/admin";
 import { AdminRepository } from "../../repositories/AdminRepository";
+import { AdminRoleSchema } from "../../utils/user-role";
 
 export async function createAdmin(
   payload: ICreateAdmin,

@@ -1,9 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  ICompany,
-  ICompanyResponse,
-  IUpdateCompany,
-} from "../interfaces/company";
+import { ICompany, IUpdateCompany } from "../interfaces/company";
 
 export class CompanyRepository {
   private collection;
@@ -13,7 +9,14 @@ export class CompanyRepository {
   }
 
   async create(company: ICompany) {
-    const result = await this.collection?.insertOne(company);
+    const now = new Date();
+    const companyWithDates = {
+      ...company,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await this.collection?.insertOne(companyWithDates);
 
     if (!result || !result.acknowledged) {
       throw new Error("Failed to create company");
@@ -21,7 +24,7 @@ export class CompanyRepository {
 
     return {
       id: result.insertedId.toString(),
-      ...company,
+      ...companyWithDates,
     };
   }
 
@@ -56,7 +59,12 @@ export class CompanyRepository {
   async update(uuid: string, company: IUpdateCompany) {
     const updatedCompany = await this.collection?.findOneAndUpdate(
       { uuid },
-      { $set: { ...company, updatedAt: new Date() } },
+      {
+        $set: {
+          ...company,
+          updatedAt: new Date(),
+        },
+      },
       { returnDocument: "after" }
     );
 

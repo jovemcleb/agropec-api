@@ -1,9 +1,13 @@
 import { z } from "zod";
 
-// Roles do sistema:
-// SUPER_ADMIN: Administrador com poderes totais, incluindo gestão de outros admins
-// admin: Administrador regular com acesso a funcionalidades administrativas
-// staff: Equipe de suporte com privilégios limitados
-// user: Usuário regular do sistema
-export const UserRoleSchema = z.enum(["SUPER_ADMIN", "admin", "staff", "user"]);
+// Roles de usuários comuns
+export const UserRoleSchema = z.enum(["user"]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
+
+// Roles de administradores
+export const AdminRoleSchema = z.enum(["SUPER_ADMIN", "admin"]);
+export type AdminRole = z.infer<typeof AdminRoleSchema>;
+
+// Todos os roles do sistema (para uso geral quando necessário)
+export const SystemRoleSchema = z.enum(["SUPER_ADMIN", "admin", "user"]);
+export type SystemRole = z.infer<typeof SystemRoleSchema>;

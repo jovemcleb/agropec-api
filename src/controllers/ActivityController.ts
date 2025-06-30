@@ -1,10 +1,6 @@
 import { randomUUID } from "crypto";
 import { FastifyReply, FastifyRequest } from "fastify";
-import {
-  CreateActivitySchema,
-  IUpdateActivity,
-  IUpdateActivityImages,
-} from "../interfaces/activity";
+import { CreateActivitySchema, IUpdateActivity } from "../interfaces/activity";
 import { ActivityRepository } from "../repositories/ActivityRepository";
 import { ImageUploadService } from "../services/ImageUploadService";
 import { createActivity } from "../useCases/activities/createActivity";
@@ -328,94 +324,6 @@ export class ActivityController {
         reply.status(500).send({ error: error.message });
       } else {
         reply.status(500).send({ error: "Internal Server Error" });
-      }
-    }
-  }
-
-  async updateActivityImage(
-    request: FastifyRequest<{
-      Params: { uuid: string };
-      Body: IUpdateActivityImages;
-    }>,
-    reply: FastifyReply
-  ) {
-    try {
-      const { uuid } = request.params;
-
-      // Buscar atividade atual para verificar imagens existentes
-      const currentActivity = await this.activityRepository.getByUuid(uuid);
-      if (!currentActivity) {
-        reply.status(404).send({
-          success: false,
-          message: "Atividade não encontrada para atualização",
-        });
-        return;
-      }
-
-      // Extrair imageIds do multipart/form-data se for multipart
-      let newImageIds: string[] | undefined;
-
-      if (request.isMultipart()) {
-        // Para multipart, vamos deixar handleActivityUpdate lidar com tudo
-        newImageIds = undefined; // Será extraído dentro do handleActivityUpdate
-      } else {
-        // Se não é multipart, usar request.body
-        newImageIds = request.body?.imageIds;
-      }
-
-      // Se não é multipart e não foram fornecidos IDs, retornar erro
-      if (
-        !request.isMultipart() &&
-        (!newImageIds || newImageIds.length === 0)
-      ) {
-        reply.status(400).send({
-          success: false,
-          message: "Nenhuma imagem fornecida para atualização",
-        });
-        return;
-      }
-
-      // Processar novas imagens se fornecidas, passando o UUID da atividade e IDs das imagens
-      const uploadResult = await this.imageUploadService.handleActivityUpdate(
-        request,
-        currentActivity.imageUrls || [],
-        uuid,
-        newImageIds
-      );
-
-      // Atualizar apenas as imageUrls da atividade
-      const updatedActivity = await updateActivity(
-        uuid,
-        { imageUrls: uploadResult.imageUrls },
-        this.activityRepository
-      );
-
-      if (!updatedActivity) {
-        reply.status(404).send({
-          success: false,
-          message: "Atividade não encontrada para atualização",
-        });
-        return;
-      }
-
-      reply.status(200).send({
-        success: true,
-        message: "Imagens da atividade atualizadas com sucesso",
-        data: updatedActivity,
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar imagens da atividade:", error);
-      if (error instanceof Error) {
-        reply.status(500).send({
-          success: false,
-          message: "Erro ao atualizar imagens da atividade",
-          error: error.message,
-        });
-      } else {
-        reply.status(500).send({
-          success: false,
-          message: "Erro interno ao atualizar imagens da atividade",
-        });
       }
     }
   }

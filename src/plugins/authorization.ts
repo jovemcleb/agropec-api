@@ -1,17 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
+import { SystemRole } from "../utils/user-role";
 
 export type AuthorizationStrategy =
   | "anyAdmin"
   | "selfOrAnyAdmin"
+  | "selfOrSuperAdmin"
   | "superAdmin"
   | "self"
   | "authenticated";
-
-interface AuthenticatedUser {
-  uuid: string;
-  role: string;
-}
 
 interface UuidParams {
   uuid: string;
@@ -23,8 +20,23 @@ async function authorizationPlugin(fastify: FastifyInstance) {
     (strategy: AuthorizationStrategy) =>
       async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-          const user = request.user as AuthenticatedUser;
+          // Verificar se o usuário está autenticado
+          if (!request.user) {
+            return reply.status(401).send({
+              error: "Token de acesso é obrigatório para esta ação.",
+            });
+          }
+
+          const user = request.user;
           const params = request.params as UuidParams;
+
+          // Validar se o role é válido
+          const validRoles: SystemRole[] = ["SUPER_ADMIN", "admin", "user"];
+          if (!validRoles.includes(user.role as SystemRole)) {
+            return reply.status(403).send({
+              error: "Role de usuário inválido.",
+            });
+          }
 
           switch (strategy) {
             case "superAdmin":
@@ -55,7 +67,24 @@ async function authorizationPlugin(fastify: FastifyInstance) {
               }
               break;
 
+            case "selfOrSuperAdmin":
+              const isSuperAdmin = user.role === "SUPER_ADMIN";
+              const isSelfUser = params.uuid === user.uuid;
+
+              if (!isSuperAdmin && !isSelfUser) {
+                return reply.status(403).send({
+                  error:
+                    "Acesso negado: apenas você mesmo ou SUPER_ADMIN podem realizar esta ação.",
+                });
+              }
+              break;
+
             case "self":
+              if (!params.uuid) {
+                return reply.status(400).send({
+                  error: "UUID é obrigatório para validação de acesso próprio.",
+                });
+              }
               if (params.uuid !== user.uuid) {
                 return reply.status(403).send({
                   error:

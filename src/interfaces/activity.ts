@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ICompany } from "./company";
 
 const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
@@ -7,11 +8,6 @@ export const ActivitySchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().min(1, "Descrição é obrigatória"),
   categoryId: z.string().min(1, "ID da categoria é obrigatório"),
-  latitude: z.number().min(-90).max(90, "Latitude deve estar entre -90 e 90"),
-  longitude: z
-    .number()
-    .min(-180)
-    .max(180, "Longitude deve estar entre -180 e 180"),
   imageUrls: z
     .array(z.string().url("URL da imagem deve ser uma URL válida"))
     .optional(),
@@ -58,23 +54,23 @@ export const UpdateActivitySchema = ActivitySchema.omit({
   uuid: true,
 }).partial();
 
-// Schema para atualização de imagens
-export const UpdateActivityImagesSchema = z.object({
-  imageIds: z
-    .array(z.string().uuid("ID da imagem deve ser um UUID válido"))
-    .optional(),
-});
-
 export type IActivity = z.infer<typeof ActivitySchema>;
 export type ICreateActivity = z.infer<typeof CreateActivitySchema>;
 export type ICreateActivityRequest = z.infer<
   typeof CreateActivityRequestSchema
 >;
 export type IUpdateActivity = z.infer<typeof UpdateActivitySchema>;
-export type IUpdateActivityImages = z.infer<typeof UpdateActivityImagesSchema>;
 
 export interface IActivityResponse extends IActivity {
   _id: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IActivityWithCompanyResponse
+  extends Omit<IActivity, "companyId"> {
+  _id: string;
+  company: ICompany;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -55,7 +55,11 @@ export class UserController {
         user: {
           uuid: result.uuid,
           email: result.email,
+          firstName: result.firstName,
+          lastName: result.lastName,
           role: result.role,
+          activitiesId: result.activitiesId || [],
+          standsId: result.standsId || [],
         },
         token,
       });
@@ -90,7 +94,11 @@ export class UserController {
         user: {
           uuid: newUser.uuid,
           email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
           role: newUser.role,
+          activitiesId: newUser.activitiesId || [],
+          standsId: newUser.standsId || [],
         },
         token,
       });
@@ -257,6 +265,40 @@ export class UserController {
     } catch (error) {
       if (error instanceof Error) {
         reply.status(400).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async validateToken(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      // O token já foi validado pelo middleware de autenticação
+      // Recuperamos os dados do usuário decodificados do token
+      const { uuid, email, role } = request.user;
+
+      // Busca os dados completos do usuário no banco
+      const user = await this.userRepository.findByUuid(uuid);
+
+      if (!user) {
+        return reply.status(404).send({ error: "Usuário não encontrado" });
+      }
+
+      reply.status(200).send({
+        user: {
+          uuid: user.uuid,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          activitiesId: user.activitiesId || [],
+          standsId: user.standsId || [],
+        },
+        token: request.headers.authorization?.replace("Bearer ", "") || "",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(401).send({ error: error.message });
       } else {
         reply.status(500).send({ error: "Internal Server Error" });
       }

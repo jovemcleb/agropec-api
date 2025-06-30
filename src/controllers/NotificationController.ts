@@ -74,31 +74,7 @@ export class NotificationController {
   ) {
     try {
       const { uuid } = request.params;
-      const {
-        title,
-        message,
-        type,
-        isScheduled,
-        status,
-        date,
-        time,
-        expiresAt,
-        targetAudience,
-      } = request.body;
-
-      const updateData = {
-        uuid,
-        title,
-        message,
-        type,
-        isScheduled,
-        status,
-        date,
-        time,
-        expiresAt,
-        targetAudience,
-        updatedAt: new Date(),
-      };
+      const updateData = request.body;
 
       const updatedNotification = await updateNotification(
         uuid,
@@ -172,6 +148,23 @@ export class NotificationController {
       reply.status(200).send({
         success: true,
         message: "Notificações agendadas encontradas",
+        data: notifications,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(500).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async getDelivered(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const notifications = await this.notificationRepository.getDelivered();
+      reply.status(200).send({
+        success: true,
+        message: "Notificações entregues encontradas",
         data: notifications,
       });
     } catch (error) {

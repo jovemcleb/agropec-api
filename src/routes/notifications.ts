@@ -64,6 +64,27 @@ export const notificationsRoutes: FastifyPluginAsync = async (
         fastify.authorize("anyAdmin"),
         fastify.validateSchema({ body: UpdateNotificationSchema }),
       ],
+      onResponse: async (request, reply) => {
+        const { uuid } = request.params;
+
+        const notification = await fastify.repositories.notification.getByUuid(
+          uuid
+        );
+
+        if (notification) {
+          await fastify.scheduleGlobalNotification(notification);
+
+          if (!notification.isScheduled && notification.status === "pending") {
+            console.log(
+              "[WebSocket] Interceptando atualização de notificação para instantânea"
+            );
+            fastify.wsManager.broadcastNotification(
+              notification,
+              notification.targetAudience
+            );
+          }
+        }
+      },
     },
     notificationController.update.bind(notificationController)
   );
@@ -84,5 +105,51 @@ export const notificationsRoutes: FastifyPluginAsync = async (
     notificationController.getScheduledNotifications.bind(
       notificationController
     )
+  );
+
+  // Rota para reagendar manualmente uma notificação
+  fastify.post<{ Params: { uuid: string } }>(
+    "/notifications/:uuid/reschedule",
+    {
+      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
+    },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params;
+
+        // Buscar a notificação
+        const notification = await fastify.repositories.notification.getByUuid(
+          uuid
+        );
+
+        if (!notification) {
+          return reply.status(404).send({
+            success: false,
+            message: "Notificação não encontrada",
+          });
+        }
+
+        // Reagendar a notificação
+        await fastify.scheduleGlobalNotification(notification);
+
+        reply.status(200).send({
+          success: true,
+          message: "Notificação reagendada com sucesso",
+          data: notification,
+        });
+      } catch (error) {
+        if (error instanceof Error) {
+          reply.status(500).send({ error: error.message });
+        } else {
+          reply.status(500).send({ error: "Internal Server Error" });
+        }
+      }
+    }
+  );
+
+  // Rota para notificações globais entregues
+  fastify.get(
+    "/notifications/delivered",
+    notificationController.getDelivered.bind(notificationController)
   );
 };
