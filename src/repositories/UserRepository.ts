@@ -1,15 +1,10 @@
-import { FastifyInstance } from "fastify";
-import { IUser } from "../interfaces/user";
 import bcrypt from "bcrypt";
+import { FastifyInstance } from "fastify";
 import { Collection } from "mongodb";
+import { IUser } from "../interfaces/user";
 
 export class UserRepository {
   private collection: Collection<IUser>;
-
-  private _omitPassword(user: IUser): Omit<IUser, "password"> {
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
-  }
 
   constructor(fastify: FastifyInstance) {
     const collection = fastify.mongo.db?.collection<IUser>("users");
@@ -20,12 +15,20 @@ export class UserRepository {
     this.collection = collection;
   }
 
+  private _omitPassword(user: IUser): Omit<IUser, "password"> {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
   async create(user: IUser): Promise<Omit<IUser, "password">> {
     const hashedPassword = await bcrypt.hash(user.password, 10);
+    const now = new Date();
 
     const newUser = {
       ...user,
       password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
     };
     const result = await this.collection.insertOne(newUser);
 
@@ -134,7 +137,10 @@ export class UserRepository {
     uuid: string,
     user: Partial<IUser>
   ): Promise<Omit<IUser, "password">> {
-    const updatePayload: Partial<IUser> = { ...user };
+    const updatePayload: Partial<IUser> = {
+      ...user,
+      updatedAt: new Date(),
+    };
 
     const result = await this.collection.findOneAndUpdate(
       { uuid },

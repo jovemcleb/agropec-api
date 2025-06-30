@@ -29,6 +29,15 @@ export const usersRoutes: FastifyPluginAsync = async (
     userController.signup.bind(userController)
   );
 
+  // Rota para validar token
+  fastify.get(
+    "/users/validate",
+    {
+      preHandler: [fastify.authenticate],
+    },
+    userController.validateToken.bind(userController)
+  );
+
   // Rotas que requerem autenticação e autorização
   fastify.patch<{
     Params: { uuid: string };

@@ -26,5 +26,7 @@ export async function loginCase(
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
+    activitiesId: user.activitiesId || [],
+    standsId: user.standsId || [],
   };
 }

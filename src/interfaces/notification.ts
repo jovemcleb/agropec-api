@@ -62,6 +62,8 @@ export type IUpdateNotification = z.infer<typeof UpdateNotificationSchema>;
 
 export interface INotificationResponse extends INotification {
   _id: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type EventType = "activity" | "stand";

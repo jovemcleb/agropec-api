@@ -5,7 +5,9 @@ import { adminRoutes } from "./admin";
 import { categoriesRoutes } from "./categories";
 import { companiesRoutes } from "./companies";
 import { notificationsRoutes } from "./notifications";
+import { scheduleRoutes } from "./schedule";
 import { standRoutes } from "./stands";
+import { userNotificationsRoutes } from "./userNotifications";
 import { usersRoutes } from "./users";
 
 export const routes: FastifyPluginAsync = async (fastify) => {
@@ -14,7 +16,9 @@ export const routes: FastifyPluginAsync = async (fastify) => {
   fastify.register(companiesRoutes);
   fastify.register(categoriesRoutes);
   fastify.register(usersRoutes);
+  fastify.register(userNotificationsRoutes);
   fastify.register(standRoutes);
   fastify.register(activityRoutes);
   fastify.register(notificationsRoutes);
+  fastify.register(scheduleRoutes);
 };

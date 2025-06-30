@@ -64,24 +64,11 @@ export class UserNotificationRepository {
   }
 
   async deleteByEventId(userId: string, eventId: string): Promise<boolean> {
-    // Primeiro, encontrar todas as notificações relacionadas ao evento
-    const notifications = await this.collection
-      ?.find({
-        userId,
-        $or: [
-          { "notification.activityId": eventId },
-          { "notification.standId": eventId },
-        ],
-      })
-      .toArray();
-
-    if (!notifications || notifications.length === 0) {
-      return false;
-    }
-
-    // Deletar todas as notificações encontradas
+    // Deletar todas as notificações pendentes relacionadas ao evento
     const result = await this.collection?.deleteMany({
-      uuid: { $in: notifications.map((n) => n.uuid) },
+      userId,
+      eventId,
+      status: "pending", // Só deletar notificações pendentes, manter as já entregues/lidas
     });
 
     if (!result) {
@@ -96,6 +83,16 @@ export class UserNotificationRepository {
 
     if (!result) {
       throw new Error("Failed to delete user notifications");
+    }
+
+    return result.deletedCount > 0;
+  }
+
+  async deleteByNotificationId(uuid: string): Promise<boolean> {
+    const result = await this.collection?.deleteOne({ uuid });
+
+    if (!result) {
+      throw new Error("Failed to delete user notification");
     }
 
     return result.deletedCount > 0;

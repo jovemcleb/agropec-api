@@ -158,4 +158,21 @@ export class NotificationController {
       }
     }
   }
+
+  async getDelivered(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const notifications = await this.notificationRepository.getDelivered();
+      reply.status(200).send({
+        success: true,
+        message: "Notificações entregues encontradas",
+        data: notifications,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(500).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
 }
