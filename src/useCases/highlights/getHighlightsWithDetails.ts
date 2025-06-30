@@ -1,10 +1,12 @@
 import { IHighlightWithDetails } from "../../interfaces/highlight";
-import { IHighlightRepository } from "../../repositories/HighlightRepository";
 import { IActivityRepository } from "../../repositories/ActivityRepository";
+import { IHighlightRepository } from "../../repositories/HighlightRepository";
 import { StandRepository } from "../../repositories/StandRepository";
 import { handleError } from "../../utils/formatter-activity";
-import { IActivityResponse } from "../../interfaces/activity";
-import { IStandResponse } from "../../interfaces/stand"; 
+
+// As tipagens que você quer usar são importadas aqui
+import { IActivityWithCompanyResponse } from "../../interfaces/activity";
+import { IStandWithCompanyResponse } from "../../interfaces/stand";
 
 export async function getHighlightsWithDetails(
   highlightRepository: IHighlightRepository,
@@ -12,13 +14,12 @@ export async function getHighlightsWithDetails(
   standRepository: StandRepository
 ): Promise<IHighlightWithDetails[]> {
   try {
-    // 1. Busca inicial dos destaques
     const highlights = await highlightRepository.getAll();
-    if (highlights.length === 0) {
+
+    if (!highlights || highlights.length === 0) {
       return [];
     }
 
-    // 2. Separa os IDs de referência por tipo para buscar em lote
     const activityIds: string[] = [];
     const standIds: string[] = [];
 
@@ -30,31 +31,65 @@ export async function getHighlightsWithDetails(
       }
     });
 
-    // 3. Busca todos os dados relacionados de uma só vez, em paralelo
     const [activities, stands] = await Promise.all([
-      activityIds.length > 0 ? activityRepository.getManyByUuids(activityIds) : Promise.resolve([]),
-      standIds.length > 0 ? standRepository.getManyByUuids(standIds) : Promise.resolve([]),
+      activityIds.length > 0
+        ? Promise.all(
+            activityIds.map(async (id) => {
+              try {
+                const activity = await activityRepository.getByUuidWithCompany(
+                  id
+                );
+                return activity;
+              } catch (error) {
+                return null;
+              }
+            })
+          )
+        : Promise.resolve([]),
+      standIds.length > 0
+        ? Promise.all(
+            standIds.map(async (id) => {
+              try {
+                const stand = await standRepository.getByUuidWithCompany(id);
+                return stand;
+              } catch (error) {
+                return null;
+              }
+            })
+          )
+        : Promise.resolve([]),
     ]);
 
-    // 4. Organiza os dados em um Map para busca rápida
-    const activityMap = new Map<string, IActivityResponse>(
-      activities.map((activity) => [activity.uuid, activity])
-    );
-    const standMap = new Map<string, IStandResponse>(
-      stands.map((stand) => [stand.uuid, stand])
-    );
+    const activityMap = new Map<string, IActivityWithCompanyResponse>();
+    activities
+      .filter(
+        (activity): activity is IActivityWithCompanyResponse =>
+          activity !== null
+      )
+      .forEach((activity) => activityMap.set(activity.uuid, activity));
 
-    // 5. Monta a resposta final, combinando os dados de forma eficiente
+    const standMap = new Map<string, IStandWithCompanyResponse>();
+    stands
+      .filter((stand): stand is IStandWithCompanyResponse => stand !== null)
+      .forEach((stand) => standMap.set(stand.uuid, stand));
+
     const highlightsWithDetails = highlights.map((highlight) => {
-      return {
+      const result = {
         ...highlight,
-        activity: highlight.type === 'activity' ? activityMap.get(highlight.referenceId) : undefined,
-        stand: highlight.type === 'stand' ? standMap.get(highlight.referenceId) : undefined,
+        activity:
+          highlight.type === "activity"
+            ? activityMap.get(highlight.referenceId)
+            : undefined,
+        stand:
+          highlight.type === "stand"
+            ? standMap.get(highlight.referenceId)
+            : undefined,
       };
+      return result;
     });
 
     return highlightsWithDetails;
   } catch (error) {
-    throw handleError(error, 'Erro ao buscar destaques com detalhes');
+    throw handleError(error, "Erro ao buscar destaques com detalhes");
   }
 }

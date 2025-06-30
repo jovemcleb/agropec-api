@@ -5,6 +5,7 @@ import {
   ICreateStand,
   IStand,
   IStandResponse,
+  IStandWithCompanyResponse,
   IUpdateStand,
 } from "../interfaces/stand";
 
@@ -14,7 +15,6 @@ export interface IStandRepository {
   getByCategory(category: string): Promise<IStandResponse[]>;
   getByName(name: string): Promise<IStandResponse | null>;
   getByUuid(uuid: string): Promise<IStandResponse | null>;
-  getManyByUuids(uuids: string[]): Promise<IStandResponse[]>;
   getByDate(date: Date): Promise<IStandResponse[]>;
   getByInterest(interest: string): Promise<IStandResponse[]>;
   update(
@@ -76,20 +76,94 @@ export class StandRepository {
     } as IStandResponse;
   }
 
-  async getManyByUuids(uuids: string[]): Promise<IStandResponse[]> { // <-- tipo IStandResponse
-    if (uuids.length === 0) {
-      return [];
-    }
-    
-    const results = await this.collection.find({ 
-      uuid: { $in: uuids } 
-    }).toArray();
+  async getByUuidWithCompany(
+    uuid: string
+  ): Promise<IStandWithCompanyResponse | null> {
+    try {
+      // Primeiro, vamos verificar se o stand existe
+      const stand = await this.getByUuid(uuid);
+      console.log("[getByUuidWithCompany] Stand encontrado:", stand);
 
-    return results.map((doc) => ({
-      ...doc,
-      _id: doc._id.toString(),
-    })) as IStandResponse[]; // <-- tipo IStandResponse
+      if (!stand) {
+        console.log("[getByUuidWithCompany] Stand não encontrado");
+        return null;
+      }
+
+      const pipeline = [
+        { $match: { uuid } },
+        {
+          $lookup: {
+            from: "companies",
+            localField: "companyId",
+            foreignField: "uuid",
+            as: "companyData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$companyData",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            _id: { $toString: "$_id" },
+            uuid: 1,
+            name: 1,
+            description: 1,
+            categoryId: 1,
+            latitude: 1,
+            longitude: 1,
+            imageUrls: 1,
+            date: 1,
+            openingTime: 1,
+            closingTime: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            company: {
+              $cond: {
+                if: "$companyData",
+                then: {
+                  uuid: "$companyData.uuid",
+                  name: "$companyData.name",
+                  description: "$companyData.description",
+                },
+                else: {
+                  uuid: "company-not-found",
+                  name: "Empresa não encontrada",
+                  description: "Detalhes da empresa não disponíveis",
+                },
+              },
+            },
+          },
+        },
+      ];
+
+      const result = await this.collection.aggregate(pipeline).toArray();
+      console.log("[getByUuidWithCompany] Resultado da agregação:", result);
+
+      if (result.length === 0) {
+        // Se não encontrou na agregação mas o stand existe, retorna com company null
+        console.log(
+          "[getByUuidWithCompany] Agregação não retornou resultados, mas stand existe"
+        );
+        return {
+          ...stand,
+          company: {
+            uuid: "company-not-found",
+            name: "Empresa não encontrada",
+            description: "Detalhes da empresa não disponíveis",
+          },
+        } as IStandWithCompanyResponse;
+      }
+
+      return result[0] as IStandWithCompanyResponse;
+    } catch (error) {
+      console.error("[getByUuidWithCompany] Erro:", error);
+      return null;
+    }
   }
+
   async getByDate(date: string): Promise<IStandResponse[]> {
     const results = await this.collection
       .find({ date })

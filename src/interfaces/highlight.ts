@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { IActivityResponse } from "./activity";
-import { IStandResponse } from "./stand";
+import { IActivityWithCompanyResponse } from "./activity";
+import { IStandWithCompanyResponse } from "./stand";
 
 export const HighlightSchema = z.object({
   uuid: z.string().uuid(),
@@ -25,7 +25,9 @@ export const UpdateHighlightSchema = HighlightSchema.omit({
 
 export type IHighlight = z.infer<typeof HighlightSchema>;
 export type ICreateHighlight = z.infer<typeof CreateHighlightSchema>;
-export type ICreateHighlightRequest = z.infer<typeof CreateHighlightRequestSchema>;
+export type ICreateHighlightRequest = z.infer<
+  typeof CreateHighlightRequestSchema
+>;
 export type IUpdateHighlight = z.infer<typeof UpdateHighlightSchema>;
 
 export interface IHighlightResponse extends IHighlight {
@@ -36,6 +38,6 @@ export interface IHighlightResponse extends IHighlight {
 
 // Interface para resposta com dados relacionados
 export interface IHighlightWithDetails extends IHighlightResponse {
-  activity?: IActivityResponse;
-  stand?: IStandResponse;
-} 
+  activity?: IActivityWithCompanyResponse;
+  stand?: IStandWithCompanyResponse;
+}
