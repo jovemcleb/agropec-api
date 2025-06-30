@@ -82,8 +82,6 @@ export class ActivityRepository implements IActivityRepository {
           name: 1,
           description: 1,
           categoryId: 1,
-          latitude: 1,
-          longitude: 1,
           imageUrls: 1,
           date: 1,
           startTime: 1,

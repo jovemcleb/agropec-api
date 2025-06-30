@@ -39,7 +39,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [
         fastify.authenticate,
-        fastify.authorize("selfOrAnyAdmin"),
+        fastify.authorize("selfOrSuperAdmin"),
         fastify.validateSchema({ body: UpdateAdminSchema }),
       ],
     },

@@ -100,17 +100,7 @@ export async function processUpload(
         });
       } else {
         // Campo de formulário
-        let value: any = part.value;
-
-        // Converter strings numéricas para números
-        if (part.fieldname === "latitude" || part.fieldname === "longitude") {
-          value = parseFloat(value as string);
-          if (isNaN(value)) {
-            throw new Error(`${part.fieldname} deve ser um número válido`);
-          }
-        }
-
-        fields[part.fieldname] = value;
+        fields[part.fieldname] = part.value;
       }
     }
 

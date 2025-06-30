@@ -16,9 +16,3 @@ export const UpdateCompanySchema = CompanySchema.partial().required({
 export type ICompany = z.infer<typeof CompanySchema>;
 export type ICreateCompany = z.infer<typeof CreateCompanySchema>;
 export type IUpdateCompany = z.infer<typeof UpdateCompanySchema>;
-
-export interface ICompanyResponse extends ICompany {
-  _id: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}

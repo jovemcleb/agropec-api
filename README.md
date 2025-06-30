@@ -4,6 +4,7 @@ API RESTful para gerenciamento de eventos agropecuários, desenvolvida com Fasti
 
 ## 📋 Índice
 
+- [Estrutura do Projeto](#estrutura-do-projeto)
 - [Configuração](#configuração)
 - [Autenticação](#autenticação)
 - [Rotas de Administradores](#rotas-de-administradores)
@@ -14,6 +15,32 @@ API RESTful para gerenciamento de eventos agropecuários, desenvolvida com Fasti
 - [Rotas de Empresas](#rotas-de-empresas)
 - [Rotas de Notificações](#rotas-de-notificações)
 - [WebSocket](#websocket)
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── controllers/          # Controladores das rotas
+├── handlers/            # Handlers de erro
+├── interfaces/          # Schemas e tipos Zod
+├── plugins/             # Plugins do Fastify
+├── repositories/        # Camada de acesso a dados
+├── routes/              # Definição das rotas
+├── scripts/             # Scripts utilitários
+├── services/            # Lógica de negócio
+├── types/               # Tipos TypeScript
+├── useCases/            # Casos de uso
+├── utils/               # Utilitários
+└── index.ts             # Ponto de entrada
+```
+
+### Arquitetura
+
+- **Clean Architecture**: Separação clara entre camadas
+- **Repository Pattern**: Abstração do acesso a dados
+- **Use Case Pattern**: Lógica de negócio isolada
+- **Plugin System**: Funcionalidades modulares
+- **Type Safety**: TypeScript em toda a aplicação
 
 ## ⚙️ Configuração
 
@@ -51,6 +78,20 @@ yarn dev
 yarn start
 ```
 
+### Scripts Disponíveis
+
+```bash
+# Desenvolvimento
+yarn dev          # Executa em modo desenvolvimento com hot reload
+yarn build        # Compila o projeto TypeScript
+yarn start        # Executa em modo produção
+yarn lint         # Executa o linter ESLint
+yarn clean        # Remove a pasta dist
+
+# Banco de dados
+yarn db:seed:admin # Cria o primeiro administrador no banco
+```
+
 ## 🔐 Autenticação
 
 A API utiliza JWT (JSON Web Tokens) para autenticação. Para rotas protegidas, inclua o token no header:
@@ -64,6 +105,38 @@ Authorization: Bearer <seu_token_jwt>
 - **SUPER_ADMIN**: Acesso total ao sistema, pode gerenciar outros administradores
 - **admin**: Pode gerenciar recursos mas não outros administradores
 - **user**: Usuário comum, acesso limitado
+
+### Estratégias de Autorização
+
+A API utiliza diferentes estratégias de autorização:
+
+- **`anyAdmin`**: Requer qualquer nível de admin (SUPER_ADMIN ou admin)
+- **`superAdmin`**: Requer especificamente SUPER_ADMIN
+- **`self`**: Usuário só pode acessar seus próprios recursos
+- **`selfOrAnyAdmin`**: Usuário pode acessar seus recursos ou qualquer admin pode acessar
+- **`selfOrSuperAdmin`**: Usuário pode acessar seus recursos ou SUPER_ADMIN pode acessar
+- **`authenticated`**: Requer apenas autenticação (qualquer usuário logado)
+
+### CORS
+
+A API está configurada com CORS para permitir requisições de:
+
+- `http://localhost:3000`
+- `http://localhost:5173`
+
+Headers permitidos:
+
+- `Content-Type`
+- `Authorization`
+- `x-user-id` (para WebSocket)
+- `Origin`
+- `Accept`
+- `Content-Length`
+- `x-requested-with`
+
+Headers expostos:
+
+- `Content-Disposition`
 
 ## 👨‍💼 Rotas de Administradores
 
@@ -390,8 +463,6 @@ Authorization: Bearer <seu_token_jwt>
       "name": "Palestra sobre Agricultura",
       "description": "Palestra sobre técnicas modernas de agricultura",
       "categoryId": "uuid-categoria",
-      "latitude": -23.5505,
-      "longitude": -46.6333,
       "imageUrls": [
         "https://s3.amazonaws.com/bucket/activities/uuid/imagem.jpg"
       ],
@@ -422,16 +493,22 @@ Authorization: Bearer <seu_token_jwt>
     "name": "Palestra sobre Agricultura",
     "description": "Palestra sobre técnicas modernas de agricultura",
     "categoryId": "uuid-categoria",
-    "latitude": -23.5505,
-    "longitude": -46.6333,
     "imageUrls": ["https://s3.amazonaws.com/bucket/activities/uuid/imagem.jpg"],
-    "companyId": "uuid-empresa",
     "date": "15/12/2024",
     "startTime": "14:00",
-    "endTime": "16:00"
+    "endTime": "16:00",
+    "company": {
+      "uuid": "uuid-empresa",
+      "name": "Empresa Agropecuária Ltda",
+      "description": "Empresa especializada em soluções agropecuárias"
+    },
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
   }
 }
 ```
+
+**Nota:** Esta rota retorna os dados completos da empresa associada à atividade, incluindo nome e descrição, ao invés de apenas o ID da empresa.
 
 ### GET /activities/category/:categoryId
 
@@ -533,8 +610,6 @@ Authorization: Bearer <seu_token_jwt>
 name: "Palestra sobre Agricultura"
 description: "Palestra sobre técnicas modernas de agricultura"
 categoryId: "uuid-categoria"
-latitude: -23.5505
-longitude: -46.6333
 companyId: "uuid-empresa"
 date: "15/12/2024"
 startTime: "14:00"
@@ -567,8 +642,6 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 name: "Palestra Atualizada"
 description: "Descrição atualizada"
 categoryId: "uuid-categoria"
-latitude: -23.5505
-longitude: -46.6333
 companyId: "uuid-empresa"
 date: "15/12/2024"
 startTime: "14:00"
@@ -647,8 +720,6 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
       "name": "Stand da Empresa XYZ",
       "description": "Apresentação de produtos agrícolas",
       "categoryId": "uuid-categoria",
-      "latitude": -23.5505,
-      "longitude": -46.6333,
       "imageUrls": ["https://s3.amazonaws.com/bucket/stands/uuid/imagem.jpg"],
       "companyId": "uuid-empresa",
       "date": "15/12/2024",
@@ -716,8 +787,6 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
     "name": "Stand da Empresa XYZ",
     "description": "Apresentação de produtos agrícolas",
     "categoryId": "uuid-categoria",
-    "latitude": -23.5505,
-    "longitude": -46.6333,
     "imageUrls": ["https://s3.amazonaws.com/bucket/stands/uuid/imagem.jpg"],
     "companyId": "uuid-empresa",
     "date": "15/12/2024",
@@ -778,8 +847,6 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 name: "Stand da Empresa XYZ"
 description: "Apresentação de produtos agrícolas"
 categoryId: "uuid-categoria"
-latitude: -23.5505
-longitude: -46.6333
 companyId: "uuid-empresa"
 date: "15/12/2024"
 openingTime: "09:00"
@@ -812,8 +879,6 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 name: "Stand Atualizado"
 description: "Descrição atualizada"
 categoryId: "uuid-categoria"
-latitude: -23.5505
-longitude: -46.6333
 companyId: "uuid-empresa"
 date: "15/12/2024"
 openingTime: "09:00"
@@ -1193,6 +1258,33 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 }
 ```
 
+### POST /notifications/:uuid/reschedule
+
+**Autenticação:** Requer admin
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificação reagendada com sucesso",
+  "data": {
+    "_id": "mongo_id",
+    "uuid": "uuid-da-notificacao",
+    "title": "Anúncio Importante",
+    "message": "Evento será realizado amanhã",
+    "type": "announcement",
+    "isScheduled": true,
+    "status": "pending",
+    "date": "15/12/2024",
+    "time": "10:00",
+    "targetAudience": ["all"]
+  }
+}
+```
+
+**Nota:** Esta rota permite reagendar manualmente uma notificação que já foi criada, útil para casos onde a data/hora do evento foi alterada.
+
 ## 🌐 WebSocket
 
 ### Conexão WebSocket
@@ -1291,6 +1383,23 @@ x-user-id: uuid-do-usuario
 - Validação de tipos de dados
 - Sanitização de entrada
 
+### Tratamento de Erros
+
+A API possui um sistema robusto de tratamento de erros:
+
+- **Validação de Schema**: Erros de validação Zod são formatados automaticamente
+- **Body Vazio**: Requisições com body vazio são tratadas adequadamente
+- **Serialização**: Erros de serialização de resposta são capturados
+- **Logs Detalhados**: Todos os erros são logados com contexto completo
+
+### Logs e Monitoramento
+
+- Logs estruturados com Pino
+- Formatação legível em desenvolvimento
+- Nível de log configurável
+- Timestamps em formato legível
+- Logs de erro detalhados para debugging
+
 ## 🚀 Deploy
 
 ### Docker
@@ -1309,6 +1418,13 @@ docker run -p 3000:3000 agropec-api
 # Executar com MongoDB
 docker-compose up -d
 ```
+
+O `docker-compose.yml` inclui:
+
+- **MongoDB**: Banco de dados principal
+- **Volumes**: Persistência de dados
+- **Portas**: MongoDB na porta 27017
+- **Restart**: Configuração automática de restart
 
 ## 📞 Suporte
 
