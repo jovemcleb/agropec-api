@@ -66,6 +66,17 @@ export class UserNotificationService {
     }
   }
 
+  async deleteNotification(notificationId: string): Promise<void> {
+    try {
+      await this.userNotificationRepository.deleteByNotificationId(
+        notificationId
+      );
+    } catch (error) {
+      console.error("Erro ao deletar notificação:", error);
+      throw new Error("Falha ao deletar notificação");
+    }
+  }
+
   async markAsDelivered(notificationId: string): Promise<void> {
     try {
       await this.userNotificationRepository.markAsDelivered(notificationId);

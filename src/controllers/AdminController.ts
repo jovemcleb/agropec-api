@@ -54,7 +54,7 @@ export class AdminController {
   ) {
     try {
       const { email, firstName, lastName, password } = request.body;
-      const requester = request.user as { uuid: string; role: string };
+      const requester = request.user;
 
       // Apenas SUPER_ADMIN pode criar novos admins
       if (requester.role !== "SUPER_ADMIN") {
@@ -115,7 +115,7 @@ export class AdminController {
       const { uuid: uuidParam } = request.params;
 
       const { uuid, firstName, lastName, email, password } = request.body;
-      const requester = request.user as { uuid: string; role: string };
+      const requester = request.user;
       const updatedAdmin = await updateAdmin(
         requester,
         uuidParam,
@@ -138,7 +138,7 @@ export class AdminController {
   ) {
     try {
       const { uuid: uuidParam } = request.params;
-      const requester = request.user as { uuid: string; role: string };
+      const requester = request.user;
       const deletedAdmin = await deleteAdmin(
         requester,
         uuidParam,
@@ -149,6 +149,40 @@ export class AdminController {
     } catch (error) {
       if (error instanceof Error) {
         reply.status(400).send({ error: error.message });
+      } else {
+        reply.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  }
+
+  async validateToken(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      // O token já foi validado pelo middleware de autenticação
+      // Recuperamos os dados do admin decodificados do token
+      const { uuid, email, role } = request.user;
+
+      // Busca os dados completos do admin no banco
+      const admin = await this.adminRepository.findByUuid(uuid);
+
+      if (!admin) {
+        return reply
+          .status(404)
+          .send({ error: "Administrador não encontrado" });
+      }
+
+      reply.status(200).send({
+        admin: {
+          uuid: admin.uuid,
+          email: admin.email,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+          role: admin.role,
+        },
+        token: request.headers.authorization?.replace("Bearer ", "") || "",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(401).send({ error: error.message });
       } else {
         reply.status(500).send({ error: "Internal Server Error" });
       }
