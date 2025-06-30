@@ -3,7 +3,6 @@ import { ActivityController } from "../controllers/ActivityController";
 import {
   ICreateActivity,
   IUpdateActivity,
-  IUpdateActivityImages,
   UpdateActivitySchema,
 } from "../interfaces/activity";
 
@@ -82,16 +81,5 @@ export const activityRoutes: FastifyPluginAsync = async (
       preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     activityController.deleteActivity.bind(activityController)
-  );
-
-  fastify.patch<{
-    Params: { uuid: string };
-    Body: IUpdateActivityImages;
-  }>(
-    "/activities/:uuid/images",
-    {
-      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
-    },
-    activityController.updateActivityImage.bind(activityController)
   );
 };

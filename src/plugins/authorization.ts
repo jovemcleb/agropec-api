@@ -4,6 +4,7 @@ import fp from "fastify-plugin";
 export type AuthorizationStrategy =
   | "anyAdmin"
   | "selfOrAnyAdmin"
+  | "selfOrSuperAdmin"
   | "superAdmin"
   | "self"
   | "authenticated";
@@ -51,6 +52,18 @@ async function authorizationPlugin(fastify: FastifyInstance) {
                 return reply.status(403).send({
                   error:
                     "Acesso negado: você não tem permissão para esta ação.",
+                });
+              }
+              break;
+
+            case "selfOrSuperAdmin":
+              const isSuperAdmin = user.role === "SUPER_ADMIN";
+              const isSelfUser = params.uuid === user.uuid;
+
+              if (!isSuperAdmin && !isSelfUser) {
+                return reply.status(403).send({
+                  error:
+                    "Acesso negado: apenas você mesmo ou SUPER_ADMIN podem realizar esta ação.",
                 });
               }
               break;

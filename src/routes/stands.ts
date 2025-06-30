@@ -3,7 +3,6 @@ import { StandController } from "../controllers/StandController";
 import {
   ICreateStandRequest,
   IUpdateStand,
-  IUpdateStandImages,
   UpdateStandSchema,
 } from "../interfaces/stand";
 
@@ -76,16 +75,5 @@ export const standRoutes: FastifyPluginAsync = async (
       preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
     },
     standController.deleteStand.bind(standController)
-  );
-
-  fastify.patch<{
-    Params: { uuid: string };
-    Body: IUpdateStandImages;
-  }>(
-    "/stands/:uuid/images",
-    {
-      preHandler: [fastify.authenticate, fastify.authorize("anyAdmin")],
-    },
-    standController.updateStandImage.bind(standController)
   );
 };
