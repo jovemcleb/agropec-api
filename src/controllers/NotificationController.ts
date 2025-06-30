@@ -74,31 +74,7 @@ export class NotificationController {
   ) {
     try {
       const { uuid } = request.params;
-      const {
-        title,
-        message,
-        type,
-        isScheduled,
-        status,
-        date,
-        time,
-        expiresAt,
-        targetAudience,
-      } = request.body;
-
-      const updateData = {
-        uuid,
-        title,
-        message,
-        type,
-        isScheduled,
-        status,
-        date,
-        time,
-        expiresAt,
-        targetAudience,
-        updatedAt: new Date(),
-      };
+      const updateData = request.body;
 
       const updatedNotification = await updateNotification(
         uuid,
