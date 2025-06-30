@@ -42,6 +42,7 @@ export class NotificationRepository implements INotificationRepository {
     const notificationData = {
       ...notification,
       uuid: randomUUID(),
+      status: notification.status || "pending",
       createdAt: now,
       updatedAt: now,
     };
@@ -143,10 +144,7 @@ export class NotificationRepository implements INotificationRepository {
     const result = await this.collection?.findOneAndUpdate(
       { uuid },
       {
-        $set: {
-          ...updateDataWithoutId,
-          updatedAt: new Date(),
-        },
+        $set: updateDataWithoutId,
       },
       { returnDocument: "after" }
     );

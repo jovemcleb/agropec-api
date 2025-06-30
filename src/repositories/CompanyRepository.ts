@@ -1,9 +1,5 @@
 import { FastifyInstance } from "fastify";
-import {
-  ICompany,
-  ICompanyResponse,
-  IUpdateCompany,
-} from "../interfaces/company";
+import { ICompany, IUpdateCompany } from "../interfaces/company";
 
 export class CompanyRepository {
   private collection;
