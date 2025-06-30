@@ -37,7 +37,6 @@ server.register(cors, {
   allowedHeaders: [
     "Content-Type",
     "Authorization",
-    "x-user-id",
     "Origin",
     "Accept",
     "Content-Length",

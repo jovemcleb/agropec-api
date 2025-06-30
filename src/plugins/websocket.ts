@@ -3,6 +3,10 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import { WebSocketManager } from "../services/WebSocketManager";
 
+interface WebSocketQuery {
+  token?: string;
+}
+
 const websocketPlugin: FastifyPluginAsync = async (
   fastify: FastifyInstance
 ) => {
@@ -11,17 +15,39 @@ const websocketPlugin: FastifyPluginAsync = async (
   const wsManager = new WebSocketManager();
   fastify.decorate("wsManager", wsManager);
 
-  fastify.get("/ws", { websocket: true }, ((connection, request) => {
+  fastify.get<{ Querystring: WebSocketQuery }>("/ws", { websocket: true }, ((
+    connection,
+    request
+  ) => {
     console.log("[WebSocket] Nova conexão WebSocket recebida");
-    const userId = request.headers["x-user-id"] as string;
 
-    if (!userId) {
-      console.log("[WebSocket] Conexão rejeitada: x-user-id não encontrado");
-      connection.close(1008, "Unauthorized: x-user-id não encontrado");
+    // Obter token do query parameter
+    const token = (request.query as WebSocketQuery).token;
+
+    if (!token) {
+      console.log("[WebSocket] Conexão rejeitada: token não encontrado");
+      connection.close(1008, "Unauthorized: token não encontrado");
       return;
     }
 
     try {
+      // Verificar e decodificar o JWT token
+      const decoded = fastify.jwt.verify(token) as {
+        uuid: string;
+        email: string;
+        role: string;
+      };
+      const userId = decoded.uuid;
+
+      if (!userId) {
+        console.log(
+          "[WebSocket] Conexão rejeitada: userId não encontrado no token"
+        );
+        connection.close(1008, "Unauthorized: token inválido");
+        return;
+      }
+
+      console.log(`[WebSocket] Token válido para usuário: ${userId}`);
       wsManager.addConnection(userId, connection);
 
       connection.send(JSON.stringify({ type: "connected", userId }));
@@ -48,8 +74,8 @@ const websocketPlugin: FastifyPluginAsync = async (
         wsManager.removeConnection(userId);
       });
     } catch (error) {
-      console.error("[WebSocket] Erro ao estabelecer conexão:", error);
-      connection.close(1011, "Erro interno ao estabelecer conexão");
+      console.error("[WebSocket] Erro ao verificar token:", error);
+      connection.close(1008, "Unauthorized: token inválido");
     }
   }) as WebsocketHandler);
 };
