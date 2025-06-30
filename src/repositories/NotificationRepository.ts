@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { FastifyInstance } from "fastify";
-import { Collection } from "mongodb";
+import { Collection, WithId } from "mongodb";
 import {
   ICreateNotification,
   INotification,
@@ -22,6 +22,7 @@ export interface INotificationRepository {
     notification: Partial<IUpdateNotification>
   ): Promise<INotification | null>;
   delete(uuid: string): Promise<boolean>;
+  getDelivered(): Promise<WithId<INotificationResponse>[]>;
 }
 
 export class NotificationRepository implements INotificationRepository {
@@ -159,5 +160,14 @@ export class NotificationRepository implements INotificationRepository {
   async delete(uuid: string): Promise<boolean> {
     const result = await this.collection.deleteOne({ uuid });
     return result.deletedCount > 0;
+  }
+
+  async getDelivered(): Promise<WithId<INotificationResponse>[]> {
+    const results = await this.collection
+      .find({ status: "delivered" })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return results;
   }
 }

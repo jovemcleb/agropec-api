@@ -9,7 +9,14 @@ export class CategoryRepository {
   }
 
   async create(category: ICategory) {
-    const result = await this.collection?.insertOne(category);
+    const now = new Date();
+    const categoryWithDates = {
+      ...category,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await this.collection?.insertOne(categoryWithDates);
 
     if (!result || !result.acknowledged) {
       throw new Error("Failed to create category");
@@ -17,7 +24,7 @@ export class CategoryRepository {
 
     return {
       id: result.insertedId.toString(),
-      ...category,
+      ...categoryWithDates,
     };
   }
 
@@ -51,7 +58,12 @@ export class CategoryRepository {
   async update(uuid: string, category: Partial<ICategory>) {
     const newCategory = await this.collection?.findOneAndUpdate(
       { uuid },
-      { $set: category },
+      {
+        $set: {
+          ...category,
+          updatedAt: new Date(),
+        },
+      },
       { returnDocument: "after" }
     );
     if (!newCategory) {

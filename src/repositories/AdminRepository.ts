@@ -21,10 +21,13 @@ export class AdminRepository {
 
   async create(admin: IAdmin): Promise<Omit<IAdmin, "password">> {
     const hashedPassword = await bcrypt.hash(admin.password, 10);
+    const now = new Date();
 
     const newAdmin = {
       ...admin,
       password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const result = await this.collection.insertOne(newAdmin);
@@ -60,7 +63,10 @@ export class AdminRepository {
     uuid: string,
     admin: Partial<IAdmin>
   ): Promise<Omit<IAdmin, "password">> {
-    const updatePayload: Partial<IAdmin> = { ...admin };
+    const updatePayload: Partial<IAdmin> = {
+      ...admin,
+      updatedAt: new Date(),
+    };
 
     if (updatePayload.password) {
       updatePayload.password = await bcrypt.hash(updatePayload.password, 10);
