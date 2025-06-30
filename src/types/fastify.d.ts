@@ -11,6 +11,7 @@ import { ActivityRepository } from "../repositories/ActivityRepository";
 import { AdminRepository } from "../repositories/AdminRepository";
 import { CategoryRepository } from "../repositories/CategoryRepository";
 import { CompanyRepository } from "../repositories/CompanyRepository";
+import { HighlightRepository } from "../repositories/HighlightRepository";
 import { NotificationRepository } from "../repositories/NotificationRepository";
 import { StandRepository } from "../repositories/StandRepository";
 import { UserNotificationRepository } from "../repositories/UserNotificationRepository";
@@ -35,6 +36,7 @@ declare module "fastify" {
       activity: ActivityRepository;
       category: CategoryRepository;
       company: CompanyRepository;
+      highlight: HighlightRepository;
       stand: StandRepository;
       admin: AdminRepository;
       user: UserRepository;

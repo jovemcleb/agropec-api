@@ -14,6 +14,7 @@ export interface IStandRepository {
   getByCategory(category: string): Promise<IStandResponse[]>;
   getByName(name: string): Promise<IStandResponse | null>;
   getByUuid(uuid: string): Promise<IStandResponse | null>;
+  getManyByUuids(uuids: string[]): Promise<IStandResponse[]>;
   getByDate(date: Date): Promise<IStandResponse[]>;
   getByInterest(interest: string): Promise<IStandResponse[]>;
   update(
@@ -73,6 +74,21 @@ export class StandRepository {
       ...result,
       _id: result._id.toString(),
     } as IStandResponse;
+  }
+
+  async getManyByUuids(uuids: string[]): Promise<IStandResponse[]> { // <-- tipo IStandResponse
+    if (uuids.length === 0) {
+      return [];
+    }
+    
+    const results = await this.collection.find({ 
+      uuid: { $in: uuids } 
+    }).toArray();
+
+    return results.map((doc) => ({
+      ...doc,
+      _id: doc._id.toString(),
+    })) as IStandResponse[]; // <-- tipo IStandResponse
   }
   async getByDate(date: string): Promise<IStandResponse[]> {
     const results = await this.collection
