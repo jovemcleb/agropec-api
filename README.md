@@ -6,14 +6,17 @@ API RESTful para gerenciamento de eventos agropecuários, desenvolvida com Fasti
 
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Configuração](#configuração)
+- [Interfaces e Schemas](#interfaces-e-schemas)
 - [Autenticação](#autenticação)
 - [Rotas de Administradores](#rotas-de-administradores)
 - [Rotas de Usuários](#rotas-de-usuários)
+- [Rotas de Notificações de Usuário](#rotas-de-notificações-de-usuário)
 - [Rotas de Atividades](#rotas-de-atividades)
 - [Rotas de Stands](#rotas-de-stands)
 - [Rotas de Categorias](#rotas-de-categorias)
 - [Rotas de Empresas](#rotas-de-empresas)
 - [Rotas de Notificações](#rotas-de-notificações)
+- [Rotas de Programação](#rotas-de-programação)
 - [WebSocket](#websocket)
 
 ## 📁 Estrutura do Projeto
@@ -46,13 +49,15 @@ src/
 
 ### Variáveis de Ambiente
 
+**⚠️ IMPORTANTE: Todas as variáveis marcadas como obrigatórias devem ser configuradas antes de executar a aplicação.**
+
 ```env
 # MongoDB
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DB=agropec
 
-# JWT
-JWT_SECRET=seu_jwt_secret_aqui
+# JWT (OBRIGATÓRIO)
+JWT_SECRET=sua_chave_secreta_super_segura_aqui_com_pelo_menos_32_caracteres
 JWT_EXPIRES_IN=1d
 
 # AWS S3
@@ -62,20 +67,342 @@ AWS_REGION=us-east-1
 AWS_S3_BUCKET=seu_bucket_name
 ```
 
+### Configuração de Segurança
+
+#### JWT_SECRET (Obrigatório)
+
+O `JWT_SECRET` é **obrigatório** para o funcionamento da aplicação. Use uma chave longa e aleatória:
+
+```bash
+# Gerar chave segura (escolha uma opção):
+
+# Node.js
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# OpenSSL
+openssl rand -hex 64
+
+# Python
+python -c "import secrets; print(secrets.token_hex(64))"
+```
+
+**Exemplo de JWT_SECRET seguro:**
+
+```env
+JWT_SECRET=f8a2b9c1d4e6f7a8b2c5d8e9f1a4b7c9d2e5f8a1b4c7d9e2f5a8b1c4d7e9f2a5b8c1d4e6f7a8
+```
+
+⚠️ **NUNCA** use valores como `"secret"`, `"123456"` ou compartilhe sua chave secreta!
+
 ### Instalação
 
 ```bash
-# Instalar dependências
+# 1. Instalar dependências
 yarn install
 
-# Criar primeiro administrador
+# 2. Configurar variáveis de ambiente (OBRIGATÓRIO)
+cp .env.example .env
+# Edite o arquivo .env e configure JWT_SECRET e outras variáveis
+
+# 3. Criar primeiro administrador
 yarn ts-node src/scripts/create-first-admin.ts
 
-# Executar em desenvolvimento
+# 4. Executar em desenvolvimento
 yarn dev
 
-# Executar em produção
-yarn start
+# 5. Executar em produção
+yarn build && yarn start
+```
+
+**⚠️ IMPORTANTE:** A aplicação **não iniciará** se `JWT_SECRET` não estiver configurado.
+
+## 📋 Interfaces e Schemas
+
+A API utiliza Zod para validação de dados. Cada rota utiliza schemas específicos para validar a entrada e saída de dados.
+
+### Schemas de Usuários
+
+#### `CreateUserSchema`
+
+```typescript
+{
+  firstName: string; // Nome (obrigatório)
+  lastName: string; // Sobrenome (obrigatório)
+  email: string; // Email válido (obrigatório)
+  password: string; // Senha com mínimo 8 caracteres (obrigatório)
+}
+```
+
+#### `LoginUserSchema`
+
+```typescript
+{
+  email: string; // Email (obrigatório)
+  password: string; // Senha (obrigatório)
+}
+```
+
+#### `UpdateUserSchema`
+
+```typescript
+{
+  uuid: string;          // UUID do usuário (obrigatório)
+  firstName?: string;    // Nome (opcional)
+  lastName?: string;     // Sobrenome (opcional)
+  email?: string;        // Email válido (opcional)
+  password?: string;     // Senha com mínimo 8 caracteres (opcional)
+}
+```
+
+#### `UserActivitiesSchema`
+
+```typescript
+{
+  activitiesId: string[]; // Array de UUIDs das atividades
+}
+```
+
+#### `UserStandsSchema`
+
+```typescript
+{
+  standsId: string[];    // Array de UUIDs dos stands
+}
+```
+
+### Schemas de Administradores
+
+#### `CreateAdminSchema`
+
+```typescript
+{
+  firstName: string; // Nome (obrigatório)
+  lastName: string; // Sobrenome (obrigatório)
+  email: string; // Email válido (obrigatório)
+  password: string; // Senha com mínimo 8 caracteres (obrigatório)
+}
+```
+
+#### `LoginAdminSchema`
+
+```typescript
+{
+  email: string; // Email (obrigatório)
+  password: string; // Senha (obrigatório)
+}
+```
+
+#### `UpdateAdminSchema`
+
+```typescript
+{
+  uuid: string;          // UUID do admin (obrigatório)
+  firstName?: string;    // Nome (opcional)
+  lastName?: string;     // Sobrenome (opcional)
+  email?: string;        // Email válido (opcional)
+  password?: string;     // Senha com mínimo 8 caracteres (opcional)
+}
+```
+
+### Schemas de Atividades
+
+#### `CreateActivitySchema`
+
+```typescript
+{
+  name: string; // Nome da atividade (obrigatório)
+  description: string; // Descrição (obrigatório)
+  categoryId: string; // UUID da categoria (obrigatório)
+  companyId: string; // UUID da empresa (obrigatório)
+  date: string; // Data no formato dd/mm/yyyy (obrigatório)
+  startTime: string; // Horário início HH:MM (obrigatório)
+  endTime: string; // Horário fim HH:MM (obrigatório)
+}
+```
+
+#### `CreateActivityRequestSchema` (multipart/form-data)
+
+```typescript
+{
+  ...CreateActivitySchema;
+  images?: File[];       // Arquivos de imagem (opcional)
+}
+```
+
+#### `UpdateActivitySchema`
+
+```typescript
+{
+  uuid: string;          // UUID da atividade (obrigatório)
+  name?: string;         // Nome (opcional)
+  description?: string;  // Descrição (opcional)
+  categoryId?: string;   // UUID da categoria (opcional)
+  companyId?: string;    // UUID da empresa (opcional)
+  date?: string;         // Data dd/mm/yyyy (opcional)
+  startTime?: string;    // Horário início HH:MM (opcional)
+  endTime?: string;      // Horário fim HH:MM (opcional)
+}
+```
+
+### Schemas de Stands
+
+#### `CreateStandSchema`
+
+```typescript
+{
+  name: string; // Nome do stand (obrigatório)
+  description: string; // Descrição (obrigatório)
+  categoryId: string; // UUID da categoria (obrigatório)
+  companyId: string; // UUID da empresa (obrigatório)
+  date: string; // Data no formato dd/mm/yyyy (obrigatório)
+  openingTime: string; // Horário abertura HH:MM (obrigatório)
+  closingTime: string; // Horário fechamento HH:MM (obrigatório)
+}
+```
+
+#### `CreateStandRequestSchema` (multipart/form-data)
+
+```typescript
+{
+  ...CreateStandSchema;
+  images?: File[];       // Arquivos de imagem (opcional)
+}
+```
+
+#### `UpdateStandSchema`
+
+```typescript
+{
+  uuid: string;          // UUID do stand (obrigatório)
+  name?: string;         // Nome (opcional)
+  description?: string;  // Descrição (opcional)
+  categoryId?: string;   // UUID da categoria (opcional)
+  companyId?: string;    // UUID da empresa (opcional)
+  date?: string;         // Data dd/mm/yyyy (opcional)
+  openingTime?: string;  // Horário abertura HH:MM (opcional)
+  closingTime?: string;  // Horário fechamento HH:MM (opcional)
+}
+```
+
+### Schemas de Categorias
+
+#### `CreateCategorySchema`
+
+```typescript
+{
+  name: string; // Nome da categoria (obrigatório)
+}
+```
+
+### Schemas de Empresas
+
+#### `CreateCompanySchema`
+
+```typescript
+{
+  name: string; // Nome da empresa (obrigatório)
+  description: string; // Descrição da empresa (obrigatório)
+}
+```
+
+#### `UpdateCompanySchema`
+
+```typescript
+{
+  uuid: string;          // UUID da empresa (obrigatório)
+  name?: string;         // Nome (opcional)
+  description?: string;  // Descrição (opcional)
+}
+```
+
+### Schemas de Notificações
+
+#### `CreateNotificationSchema`
+
+```typescript
+{
+  title: string;                    // Título (obrigatório)
+  message: string;                  // Mensagem (obrigatório)
+  type: "announcement" | "alert" | "system" | "event"; // Tipo (obrigatório)
+  isScheduled?: boolean;            // Se é agendada (padrão: false)
+  status?: "pending" | "delivered" | "read"; // Status (padrão: "pending")
+  date: string;                     // Data dd/mm/yyyy (obrigatório)
+  time: string;                     // Horário HH:MM (obrigatório)
+  expiresAt?: Date;                 // Data de expiração (opcional)
+  targetAudience?: ("all" | "admin" | "exhibitors" | "visitors" | "staff")[]; // Audiência (padrão: ["all"])
+}
+```
+
+#### `UpdateNotificationSchema`
+
+```typescript
+{
+  uuid: string;                     // UUID da notificação (obrigatório)
+  title?: string;                   // Título (opcional)
+  message?: string;                 // Mensagem (opcional)
+  type?: "announcement" | "alert" | "system" | "event"; // Tipo (opcional)
+  isScheduled?: boolean;            // Se é agendada (opcional)
+  status?: "pending" | "delivered" | "read"; // Status (opcional)
+  date?: string;                    // Data dd/mm/yyyy (opcional)
+  time?: string;                    // Horário HH:MM (opcional)
+  expiresAt?: Date;                 // Data de expiração (opcional)
+  targetAudience?: ("all" | "admin" | "exhibitors" | "visitors" | "staff")[]; // Audiência (opcional)
+}
+```
+
+### Schemas de Programação
+
+#### `ScheduleItemSchema`
+
+```typescript
+{
+  type: "activity" | "stand";      // Tipo do item (obrigatório)
+  uuid: string;                    // UUID do item (obrigatório)
+  name: string;                    // Nome (obrigatório)
+  description: string;             // Descrição (obrigatório)
+  date: string;                    // Data dd/mm/yyyy (obrigatório)
+  startTime?: string;              // Horário início HH:MM (atividades)
+  endTime?: string;                // Horário fim HH:MM (atividades)
+  openingTime?: string;            // Horário abertura HH:MM (stands)
+  closingTime?: string;            // Horário fechamento HH:MM (stands)
+  categoryId: string;              // UUID da categoria (obrigatório)
+  companyId: string;               // UUID da empresa (obrigatório)
+  imageUrls?: string[];            // URLs das imagens (opcional)
+}
+```
+
+### Validação de Dados
+
+- **Datas**: Formato obrigatório `dd/mm/yyyy` com validação de data válida
+- **Horários**: Formato obrigatório `HH:MM` (24 horas)
+- **UUIDs**: Validação de formato UUID válido
+- **Emails**: Validação de formato de email válido
+- **URLs**: Validação de formato de URL válido para imagens
+- **Senhas**: Mínimo 8 caracteres
+- **Strings**: Campos de texto não podem estar vazios
+
+### Como Usar os Schemas
+
+Cada rota que aceita dados de entrada possui um schema específico indicado na documentação. Os schemas definidos com Zod garantem:
+
+1. **Validação automática**: Dados inválidos são rejeitados automaticamente
+2. **Mensagens de erro claras**: Erros de validação retornam mensagens específicas em português
+3. **Type safety**: TypeScript verifica os tipos em tempo de desenvolvimento
+4. **Transformação de dados**: Campos opcionais recebem valores padrão quando aplicável
+
+**Exemplo de erro de validação:**
+
+```json
+{
+  "error": "Dados inválidos",
+  "details": [
+    {
+      "code": "invalid_string",
+      "message": "Email inválido",
+      "path": ["email"]
+    }
+  ]
+}
 ```
 
 ### Scripts Disponíveis
@@ -128,7 +455,6 @@ Headers permitidos:
 
 - `Content-Type`
 - `Authorization`
-- `x-user-id` (para WebSocket)
 - `Origin`
 - `Accept`
 - `Content-Length`
@@ -142,7 +468,8 @@ Headers expostos:
 
 ### POST /admin/login
 
-**Autenticação:** Não requerida
+**Autenticação:** Não requerida  
+**Schema:** `LoginAdminSchema`
 
 **Body:**
 
@@ -170,7 +497,8 @@ Headers expostos:
 
 ### POST /admin/signup
 
-**Autenticação:** Requer SUPER_ADMIN
+**Autenticação:** Requer SUPER_ADMIN  
+**Schema:** `CreateAdminSchema`
 
 **Body:**
 
@@ -218,7 +546,8 @@ Headers expostos:
 
 ### PUT /admin/:uuid
 
-**Autenticação:** Requer self ou admin
+**Autenticação:** Requer self ou admin  
+**Schema:** `UpdateAdminSchema`
 
 **Body:**
 
@@ -258,11 +587,33 @@ Headers expostos:
 }
 ```
 
+### GET /admin/validate
+
+**Autenticação:** Requer token válido de admin
+
+**Resposta (200):**
+
+```json
+{
+  "admin": {
+    "uuid": "uuid-do-admin",
+    "email": "admin@agropec.com",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "role": "SUPER_ADMIN"
+  },
+  "token": "jwt_token_aqui"
+}
+```
+
+**Nota:** Esta rota valida o token de administrador fornecido no header Authorization e retorna os dados do admin se o token for válido.
+
 ## 👤 Rotas de Usuários
 
 ### POST /users/login
 
-**Autenticação:** Não requerida
+**Autenticação:** Não requerida  
+**Schema:** `LoginUserSchema`
 
 **Body:**
 
@@ -280,7 +631,11 @@ Headers expostos:
   "user": {
     "uuid": "uuid-do-usuario",
     "email": "usuario@email.com",
-    "role": "user"
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "role": "user",
+    "activitiesId": ["uuid-atividade-1"],
+    "standsId": ["uuid-stand-1"]
   },
   "token": "jwt_token_aqui"
 }
@@ -288,7 +643,8 @@ Headers expostos:
 
 ### POST /users/signup
 
-**Autenticação:** Não requerida
+**Autenticação:** Não requerida  
+**Schema:** `CreateUserSchema`
 
 **Body:**
 
@@ -308,7 +664,11 @@ Headers expostos:
   "user": {
     "uuid": "uuid-do-usuario",
     "email": "usuario@email.com",
-    "role": "user"
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "role": "user",
+    "activitiesId": [],
+    "standsId": []
   },
   "token": "jwt_token_aqui"
 }
@@ -340,7 +700,8 @@ Headers expostos:
 
 ### PATCH /users/:uuid/activities
 
-**Autenticação:** Requer self
+**Autenticação:** Requer self  
+**Schema:** `UserActivitiesSchema`
 
 **Body:**
 
@@ -366,7 +727,8 @@ Headers expostos:
 
 ### PATCH /users/:uuid/stands
 
-**Autenticação:** Requer self
+**Autenticação:** Requer self  
+**Schema:** `UserStandsSchema`
 
 **Body:**
 
@@ -392,7 +754,8 @@ Headers expostos:
 
 ### PATCH /users/:uuid/activities/remove
 
-**Autenticação:** Requer self
+**Autenticação:** Requer self  
+**Schema:** `UserActivitiesSchema`
 
 **Body:**
 
@@ -404,7 +767,8 @@ Headers expostos:
 
 ### PATCH /users/:uuid/stands/remove
 
-**Autenticação:** Requer self
+**Autenticação:** Requer self  
+**Schema:** `UserStandsSchema`
 
 **Body:**
 
@@ -416,7 +780,8 @@ Headers expostos:
 
 ### PATCH /users/:uuid
 
-**Autenticação:** Requer self
+**Autenticação:** Requer self  
+**Schema:** `UpdateUserSchema`
 
 **Body:**
 
@@ -441,6 +806,136 @@ Headers expostos:
   "success": true,
   "message": "User deleted successfully",
   "deletedCount": 1
+}
+```
+
+### GET /users/validate
+
+**Autenticação:** Requer token válido
+
+**Resposta (200):**
+
+```json
+{
+  "user": {
+    "uuid": "uuid-do-usuario",
+    "email": "usuario@email.com",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "role": "user",
+    "activitiesId": ["uuid-atividade-1"],
+    "standsId": ["uuid-stand-1"]
+  },
+  "token": "jwt_token_aqui"
+}
+```
+
+**Nota:** Esta rota valida o token fornecido no header Authorization e retorna os dados do usuário se o token for válido.
+
+## 🔔 Rotas de Notificações de Usuário
+
+### GET /users/:uuid/notifications
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificações do usuário encontradas",
+  "data": [
+    {
+      "uuid": "uuid-da-notificacao",
+      "userId": "uuid-do-usuario",
+      "message": "A atividade 'Palestra sobre Agricultura' começará em 30 minutos!",
+      "eventId": "uuid-da-atividade",
+      "eventType": "activity",
+      "scheduledFor": "2024-12-15T09:30:00.000Z",
+      "status": "delivered",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### GET /users/:uuid/notifications/unread
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificações não lidas encontradas",
+  "data": [
+    {
+      "uuid": "uuid-da-notificacao",
+      "userId": "uuid-do-usuario",
+      "message": "A atividade 'Palestra sobre Agricultura' começará em 30 minutos!",
+      "eventId": "uuid-da-atividade",
+      "eventType": "activity",
+      "scheduledFor": "2024-12-15T09:30:00.000Z",
+      "status": "delivered",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### PATCH /users/:uuid/notifications/:notificationId/read
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificação marcada como lida"
+}
+```
+
+### PATCH /users/:uuid/notifications/read-all
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Todas as notificações foram marcadas como lidas",
+  "data": {
+    "markedCount": 5
+  }
+}
+```
+
+### DELETE /users/:uuid/notifications/:notificationId
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificação removida"
+}
+```
+
+### DELETE /users/:uuid/notifications
+
+**Autenticação:** Requer self
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Todas as notificações foram removidas"
 }
 ```
 
@@ -602,7 +1097,8 @@ Headers expostos:
 
 ### POST /activities
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `CreateActivityRequestSchema` (multipart/form-data)
 
 **Body (multipart/form-data):**
 
@@ -634,7 +1130,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### PUT /activities/:uuid
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `UpdateActivitySchema` (multipart/form-data)
 
 **Body (multipart/form-data):**
 
@@ -839,7 +1336,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### POST /stands
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `CreateStandRequestSchema` (multipart/form-data)
 
 **Body (multipart/form-data):**
 
@@ -871,7 +1369,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### PUT /stands/:uuid
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `UpdateStandSchema` (multipart/form-data)
 
 **Body (multipart/form-data):**
 
@@ -942,7 +1441,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### POST /categories
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `CreateCategorySchema`
 
 **Body:**
 
@@ -1018,7 +1518,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### POST /companies
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `CreateCompanySchema`
 
 **Body:**
 
@@ -1058,7 +1559,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### PUT /companies/:uuid
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `UpdateCompanySchema`
 
 **Body:**
 
@@ -1096,7 +1598,8 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 ### POST /notifications
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `CreateNotificationSchema`
 
 **Body:**
 
@@ -1185,9 +1688,39 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 }
 ```
 
+### GET /notifications/delivered
+
+**Autenticação:** Não requerida
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Notificações entregues encontradas",
+  "data": [
+    {
+      "_id": "mongo_id",
+      "uuid": "uuid-da-notificacao",
+      "title": "Anúncio Importante",
+      "message": "Evento será realizado amanhã",
+      "type": "announcement",
+      "isScheduled": false,
+      "status": "delivered",
+      "date": "15/12/2024",
+      "time": "10:00",
+      "targetAudience": ["all"],
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
 ### PUT /notifications/:uuid
 
-**Autenticação:** Requer admin
+**Autenticação:** Requer admin  
+**Schema:** `UpdateNotificationSchema`
 
 **Body:**
 
@@ -1285,18 +1818,106 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 **Nota:** Esta rota permite reagendar manualmente uma notificação que já foi criada, útil para casos onde a data/hora do evento foi alterada.
 
+## 🗓️ Rotas de Programação
+
+### GET /schedule
+
+**Autenticação:** Não requerida  
+**Schema de resposta:** Array de `ScheduleItemSchema`
+
+**Resposta (200):**
+
+```json
+[
+  {
+    "type": "activity",
+    "uuid": "uuid-da-atividade",
+    "name": "Palestra sobre Agricultura",
+    "description": "Palestra sobre técnicas modernas de agricultura",
+    "date": "15/12/2024",
+    "startTime": "14:00",
+    "endTime": "16:00",
+    "categoryId": "uuid-categoria",
+    "companyId": "uuid-empresa",
+    "imageUrls": ["https://s3.amazonaws.com/bucket/activities/uuid/imagem.jpg"]
+  },
+  {
+    "type": "stand",
+    "uuid": "uuid-do-stand",
+    "name": "Stand da Empresa XYZ",
+    "description": "Apresentação de produtos agrícolas",
+    "date": "15/12/2024",
+    "openingTime": "09:00",
+    "closingTime": "18:00",
+    "categoryId": "uuid-categoria",
+    "companyId": "uuid-empresa",
+    "imageUrls": ["https://s3.amazonaws.com/bucket/stands/uuid/imagem.jpg"]
+  }
+]
+```
+
+**Nota:** Esta rota retorna todas as atividades e stands ordenados por data e hora.
+
+### GET /schedule/user/:uuid
+
+**Autenticação:** Requer self ou admin  
+**Schema de resposta:** Array de `ScheduleItemSchema`
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Programação do usuário encontrada com sucesso",
+  "data": [
+    {
+      "type": "activity",
+      "uuid": "uuid-da-atividade",
+      "name": "Palestra sobre Agricultura",
+      "description": "Palestra sobre técnicas modernas de agricultura",
+      "date": "15/12/2024",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "categoryId": "uuid-categoria",
+      "companyId": "uuid-empresa",
+      "imageUrls": [
+        "https://s3.amazonaws.com/bucket/activities/uuid/imagem.jpg"
+      ]
+    },
+    {
+      "type": "stand",
+      "uuid": "uuid-do-stand",
+      "name": "Stand da Empresa XYZ",
+      "description": "Apresentação de produtos agrícolas",
+      "date": "15/12/2024",
+      "openingTime": "09:00",
+      "closingTime": "18:00",
+      "categoryId": "uuid-categoria",
+      "companyId": "uuid-empresa",
+      "imageUrls": ["https://s3.amazonaws.com/bucket/stands/uuid/imagem.jpg"]
+    }
+  ]
+}
+```
+
+**Nota:** Esta rota retorna apenas as atividades e stands que o usuário marcou interesse, ordenados por data e hora.
+
 ## 🌐 WebSocket
 
 ### Conexão WebSocket
 
 ```
-ws://localhost:3000/ws
+ws://localhost:3000/ws?token=seu_jwt_token
 ```
 
-**Headers necessários:**
+**Parâmetros necessários:**
+
+- `token`: JWT token obtido no login (obrigatório)
+
+**Exemplo:**
 
 ```
-x-user-id: uuid-do-usuario
+ws://localhost:3000/ws?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Tipos de Mensagens
@@ -1368,6 +1989,10 @@ x-user-id: uuid-do-usuario
 - Notificações 30 minutos antes e no início de eventos
 - Diferentes tipos de audiência
 - Status de entrega e leitura
+- **Prevenção de duplicatas**: Sistema evita notificações repetidas
+- **Limpeza automática**: Notificações pendentes são removidas ao reagendar
+- **Logs detalhados**: Rastreamento completo do ciclo de vida das notificações
+- **Reconexão inteligente**: WebSocket com autenticação JWT via query parameter
 
 ### Autenticação e Autorização
 
