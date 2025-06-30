@@ -17,6 +17,7 @@ API RESTful para gerenciamento de eventos agropecuários, desenvolvida com Fasti
 - [Rotas de Empresas](#rotas-de-empresas)
 - [Rotas de Notificações](#rotas-de-notificações)
 - [Rotas de Programação](#rotas-de-programação)
+- [Rotas de Highlights](#rotas-de-highlights)
 - [WebSocket](#websocket)
 
 ## 📁 Estrutura do Projeto
@@ -1902,6 +1903,272 @@ images: [arquivo1.jpg, arquivo2.jpg] (opcional)
 
 **Nota:** Esta rota retorna apenas as atividades e stands que o usuário marcou interesse, ordenados por data e hora.
 
+## ⭐ Rotas de Highlights
+
+### GET /highlights
+
+**Autenticação:** Não requerida
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaques encontrados com sucesso",
+  "data": [
+    {
+      "uuid": "uuid-do-destaque",
+      "title": "Atividade em Destaque",
+      "description": "Uma atividade muito importante",
+      "type": "activity",
+      "referenceId": "uuid-da-atividade",
+      "priority": 5,
+      "isActive": true,
+      "startDate": "01/01/2024",
+      "endDate": "31/12/2024",
+      "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### GET /highlights/active
+
+**Autenticação:** Não requerida
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaques ativos encontrados com sucesso",
+  "data": [
+    {
+      "uuid": "uuid-do-destaque",
+      "title": "Atividade em Destaque",
+      "description": "Uma atividade muito importante",
+      "type": "activity",
+      "referenceId": "uuid-da-atividade",
+      "priority": 5,
+      "isActive": true,
+      "startDate": "01/01/2024",
+      "endDate": "31/12/2024",
+      "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg"
+    }
+  ]
+}
+```
+
+### GET /highlights/uuid/:uuid
+
+**Autenticação:** Não requerida
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaque encontrado com sucesso",
+  "data": {
+    "uuid": "uuid-do-destaque",
+    "title": "Atividade em Destaque",
+    "description": "Uma atividade muito importante",
+    "type": "activity",
+    "referenceId": "uuid-da-atividade",
+    "priority": 5,
+    "isActive": true,
+    "startDate": "01/01/2024",
+    "endDate": "31/12/2024",
+    "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg"
+  }
+}
+```
+
+### GET /highlights/type/:type
+
+**Autenticação:** Não requerida
+
+**Parâmetros:**
+
+- `type`: Tipo do destaque (`activity`, `stand`, `company`)
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaques do tipo 'activity' encontrados com sucesso",
+  "data": [
+    {
+      "uuid": "uuid-do-destaque",
+      "title": "Atividade em Destaque",
+      "description": "Uma atividade muito importante",
+      "type": "activity",
+      "referenceId": "uuid-da-atividade",
+      "priority": 5,
+      "isActive": true,
+      "startDate": "01/01/2024",
+      "endDate": "31/12/2024",
+      "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg"
+    }
+  ]
+}
+```
+
+### GET /highlights/with-details
+
+**Autenticação:** Não requerida
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaques com detalhes encontrados com sucesso",
+  "data": [
+    {
+      "uuid": "uuid-do-destaque",
+      "title": "Atividade em Destaque",
+      "description": "Uma atividade muito importante",
+      "type": "activity",
+      "referenceId": "uuid-da-atividade",
+      "priority": 5,
+      "isActive": true,
+      "startDate": "01/01/2024",
+      "endDate": "31/12/2024",
+      "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg",
+      "activity": {
+        "uuid": "uuid-da-atividade",
+        "name": "Nome da Atividade",
+        "description": "Descrição da atividade",
+        "date": "15/12/2024",
+        "startTime": "14:00",
+        "endTime": "16:00",
+        "imageUrls": [
+          "https://s3.amazonaws.com/bucket/activities/uuid/imagem.jpg"
+        ]
+      }
+    }
+  ]
+}
+```
+
+### POST /highlights
+
+**Autenticação:** Requer admin
+
+**Body:**
+
+```json
+{
+  "title": "Atividade em Destaque",
+  "description": "Uma atividade muito importante",
+  "type": "activity",
+  "referenceId": "uuid-da-atividade",
+  "priority": 5,
+  "isActive": true,
+  "startDate": "01/01/2024",
+  "endDate": "31/12/2024"
+}
+```
+
+**Resposta (201):**
+
+```json
+{
+  "success": true,
+  "message": "Destaque criado com sucesso",
+  "data": {
+    "uuid": "uuid-do-destaque",
+    "title": "Atividade em Destaque",
+    "description": "Uma atividade muito importante",
+    "type": "activity",
+    "referenceId": "uuid-da-atividade",
+    "priority": 5,
+    "isActive": true,
+    "startDate": "01/01/2024",
+    "endDate": "31/12/2024",
+    "imageUrl": null,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### PUT /highlights/:uuid
+
+**Autenticação:** Requer admin
+
+**Body:**
+
+```json
+{
+  "title": "Atividade em Destaque Atualizada",
+  "description": "Uma atividade muito importante atualizada",
+  "priority": 8,
+  "isActive": false
+}
+```
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaque atualizado com sucesso",
+  "data": {
+    "uuid": "uuid-do-destaque",
+    "title": "Atividade em Destaque Atualizada",
+    "description": "Uma atividade muito importante atualizada",
+    "type": "activity",
+    "referenceId": "uuid-da-atividade",
+    "priority": 8,
+    "isActive": false,
+    "startDate": "01/01/2024",
+    "endDate": "31/12/2024",
+    "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg"
+  }
+}
+```
+
+### DELETE /highlights/:uuid
+
+**Autenticação:** Requer admin
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Destaque deletado com sucesso"
+}
+```
+
+### PATCH /highlights/:uuid/image
+
+**Autenticação:** Requer admin
+
+**Body (multipart/form-data):**
+
+```
+image: arquivo.jpg (obrigatório)
+```
+
+**Resposta (200):**
+
+```json
+{
+  "success": true,
+  "message": "Imagem do destaque atualizada com sucesso",
+  "data": {
+    "uuid": "uuid-do-destaque",
+    "imageUrl": "https://s3.amazonaws.com/bucket/highlights/uuid/imagem.jpg"
+  }
+}
+```
+
 ## 🌐 WebSocket
 
 ### Conexão WebSocket
@@ -1993,6 +2260,15 @@ ws://localhost:3000/ws?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - **Limpeza automática**: Notificações pendentes são removidas ao reagendar
 - **Logs detalhados**: Rastreamento completo do ciclo de vida das notificações
 - **Reconexão inteligente**: WebSocket com autenticação JWT via query parameter
+
+### Sistema de Highlights
+
+- Gestão de destaques para atividades, stands e empresas
+- Controle de prioridade para ordenação
+- Status ativo/inativo com datas de início e fim
+- Upload de imagens com integração S3
+- Busca com detalhes das entidades relacionadas
+- Autenticação e autorização para operações de escrita
 
 ### Autenticação e Autorização
 
