@@ -63,14 +63,14 @@ export type IUpdateActivity = z.infer<typeof UpdateActivitySchema>;
 
 export interface IActivityResponse extends IActivity {
   _id: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IActivityWithCompanyResponse
   extends Omit<IActivity, "companyId"> {
   _id: string;
   company: ICompany;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }

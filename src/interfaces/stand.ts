@@ -58,6 +58,6 @@ export type IUpdateStand = z.infer<typeof UpdateStandSchema>;
 
 export interface IStandResponse extends IStand {
   _id: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
