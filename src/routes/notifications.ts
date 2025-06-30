@@ -146,4 +146,10 @@ export const notificationsRoutes: FastifyPluginAsync = async (
       }
     }
   );
+
+  // Rota para notificações globais entregues
+  fastify.get(
+    "/notifications/delivered",
+    notificationController.getDelivered.bind(notificationController)
+  );
 };

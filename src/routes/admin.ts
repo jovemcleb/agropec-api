@@ -50,4 +50,10 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: [fastify.authenticate, fastify.authorize("superAdmin")] },
     adminController.delete.bind(adminController)
   );
+
+  fastify.get(
+    "/admin/validate",
+    { preHandler: [fastify.authenticate] },
+    adminController.validateToken.bind(adminController)
+  );
 };
