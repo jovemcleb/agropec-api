@@ -43,15 +43,27 @@ export class NotificationScheduler {
     eventId: string,
     eventType: EventType
   ): Promise<void> {
+    console.log(
+      `🗑️ [cancelEventNotifications] Cancelando jobs para usuário ${userId}, evento ${eventId}`
+    );
+
     const jobKeys = [
       this.getJobKey(userId, eventId, "30min", eventType),
       this.getJobKey(userId, eventId, "start", eventType),
     ];
 
     await this.cancelJobsAndCleanup(jobKeys);
+
+    console.log(
+      `🗑️ [cancelEventNotifications] Deletando notificações pendentes para evento ${eventId}`
+    );
     await this.userNotificationService.deleteEventNotifications(
       userId,
       eventId
+    );
+
+    console.log(
+      `✅ [cancelEventNotifications] Jobs e notificações processados para evento ${eventId}`
     );
   }
 
@@ -141,82 +153,179 @@ export class NotificationScheduler {
     eventType: EventType
   ): Promise<void> {
     try {
+      console.log(
+        `🔔 [scheduleEventNotification] Agendando para usuário ${userId}, evento ${eventId} (${eventName})`
+      );
+
       const formattedDate = convertDateFormat(eventDate);
       const eventDateTime = new Date(`${formattedDate}T${eventTime}`);
       const thirtyMinsBefore = new Date(eventDateTime.getTime() - 30 * 60000);
       const now = new Date();
 
+      console.log(
+        `📅 [scheduleEventNotification] Data/hora do evento: ${eventDateTime.toISOString()}`
+      );
+      console.log(
+        `⏰ [scheduleEventNotification] 30min antes: ${thirtyMinsBefore.toISOString()}`
+      );
+
       // Cancelar jobs existentes para este evento
-      this.cancelEventNotifications(userId, eventId, eventType);
+      await this.cancelEventNotifications(userId, eventId, eventType);
+
+      // Buscar notificações existentes para este evento
+      const existingNotifications =
+        await this.userNotificationService.getUserNotifications(userId);
+
+      console.log(
+        `📋 [scheduleEventNotification] Encontradas ${existingNotifications.length} notificações existentes para o usuário`
+      );
 
       // Agendar notificação 30 minutos antes
       if (thirtyMinsBefore > now) {
-        const job30min = schedule.scheduleJob(thirtyMinsBefore, async () => {
-          const message = `${
-            eventType === "activity" ? "A atividade" : "O stand"
-          } "${eventName}" começará em 30 minutos!`;
+        // Verificar se já existe notificação de 30min para este evento
+        const has30MinNotification = existingNotifications.some(
+          (n) =>
+            n.eventId === eventId &&
+            n.eventType === eventType &&
+            (n.status === "delivered" || n.status === "read") &&
+            Math.abs(n.scheduledFor.getTime() - thirtyMinsBefore.getTime()) <
+              60000 // tolerância de 1 minuto
+        );
 
-          // Verifica se já existe uma notificação entregue para este evento/horário
-          const existingNotifications =
-            await this.userNotificationService.getUserNotifications(userId);
-
-          const hasDelivered = existingNotifications.some(
-            (n) =>
-              n.eventId === eventId &&
-              n.status === "delivered" &&
-              n.scheduledFor.getTime() === thirtyMinsBefore.getTime()
+        if (!has30MinNotification) {
+          console.log(
+            `✅ [scheduleEventNotification] Agendando notificação 30min antes para ${thirtyMinsBefore.toISOString()}`
           );
-
-          if (!hasDelivered) {
-            await this.userNotificationService.createNotification(
-              userId,
-              message,
-              eventId,
-              eventType,
-              thirtyMinsBefore
+          const job30min = schedule.scheduleJob(thirtyMinsBefore, async () => {
+            console.log(
+              `🔔 [Job30Min] Executando notificação 30min para evento ${eventId}`
             );
-          }
-        });
-        this.scheduledJobs.set(
-          this.getJobKey(userId, eventId, "30min", eventType),
-          job30min
+            const message = `${
+              eventType === "activity" ? "A atividade" : "O stand"
+            } "${eventName}" começará em 30 minutos!`;
+
+            // Verificação dupla no momento da execução
+            const currentNotifications =
+              await this.userNotificationService.getUserNotifications(userId);
+
+            const alreadyExists = currentNotifications.some(
+              (n) =>
+                n.eventId === eventId &&
+                n.eventType === eventType &&
+                (n.status === "delivered" || n.status === "read") &&
+                Math.abs(
+                  n.scheduledFor.getTime() - thirtyMinsBefore.getTime()
+                ) < 60000
+            );
+
+            if (!alreadyExists) {
+              console.log(
+                `✅ [Job30Min] Criando notificação para evento ${eventId}`
+              );
+              await this.userNotificationService.createNotification(
+                userId,
+                message,
+                eventId,
+                eventType,
+                thirtyMinsBefore
+              );
+            } else {
+              console.log(
+                `⚠️ [Job30Min] Notificação já existe para evento ${eventId}, pulando`
+              );
+            }
+          });
+          this.scheduledJobs.set(
+            this.getJobKey(userId, eventId, "30min", eventType),
+            job30min
+          );
+        } else {
+          console.log(
+            `⚠️ [scheduleEventNotification] Notificação 30min já existe para evento ${eventId}, pulando`
+          );
+        }
+      } else {
+        console.log(
+          `⏰ [scheduleEventNotification] Horário 30min antes já passou, pulando agendamento`
         );
       }
 
       // Agendar notificação no início
       if (eventDateTime > now) {
-        const jobStart = schedule.scheduleJob(eventDateTime, async () => {
-          const message = `${
-            eventType === "activity" ? "A atividade" : "O stand"
-          } "${eventName}" está começando agora!`;
+        // Verificar se já existe notificação de início para este evento
+        const hasStartNotification = existingNotifications.some(
+          (n) =>
+            n.eventId === eventId &&
+            n.eventType === eventType &&
+            (n.status === "delivered" || n.status === "read") &&
+            Math.abs(n.scheduledFor.getTime() - eventDateTime.getTime()) < 60000 // tolerância de 1 minuto
+        );
 
-          // Verifica se já existe uma notificação entregue para este evento/horário
-          const existingNotifications =
-            await this.userNotificationService.getUserNotifications(userId);
-          const hasDelivered = existingNotifications.some(
-            (n) =>
-              n.eventId === eventId &&
-              n.status === "delivered" &&
-              n.scheduledFor.getTime() === eventDateTime.getTime()
+        if (!hasStartNotification) {
+          console.log(
+            `✅ [scheduleEventNotification] Agendando notificação de início para ${eventDateTime.toISOString()}`
           );
-
-          if (!hasDelivered) {
-            await this.userNotificationService.createNotification(
-              userId,
-              message,
-              eventId,
-              eventType,
-              eventDateTime
+          const jobStart = schedule.scheduleJob(eventDateTime, async () => {
+            console.log(
+              `🔔 [JobStart] Executando notificação de início para evento ${eventId}`
             );
-          }
-        });
-        this.scheduledJobs.set(
-          this.getJobKey(userId, eventId, "start", eventType),
-          jobStart
+            const message = `${
+              eventType === "activity" ? "A atividade" : "O stand"
+            } "${eventName}" está começando agora!`;
+
+            // Verificação dupla no momento da execução
+            const currentNotifications =
+              await this.userNotificationService.getUserNotifications(userId);
+
+            const alreadyExists = currentNotifications.some(
+              (n) =>
+                n.eventId === eventId &&
+                n.eventType === eventType &&
+                (n.status === "delivered" || n.status === "read") &&
+                Math.abs(n.scheduledFor.getTime() - eventDateTime.getTime()) <
+                  60000
+            );
+
+            if (!alreadyExists) {
+              console.log(
+                `✅ [JobStart] Criando notificação para evento ${eventId}`
+              );
+              await this.userNotificationService.createNotification(
+                userId,
+                message,
+                eventId,
+                eventType,
+                eventDateTime
+              );
+            } else {
+              console.log(
+                `⚠️ [JobStart] Notificação já existe para evento ${eventId}, pulando`
+              );
+            }
+          });
+          this.scheduledJobs.set(
+            this.getJobKey(userId, eventId, "start", eventType),
+            jobStart
+          );
+        } else {
+          console.log(
+            `⚠️ [scheduleEventNotification] Notificação de início já existe para evento ${eventId}, pulando`
+          );
+        }
+      } else {
+        console.log(
+          `⏰ [scheduleEventNotification] Horário do evento já passou, pulando agendamento`
         );
       }
+
+      console.log(
+        `✅ [scheduleEventNotification] Agendamento concluído para evento ${eventId}`
+      );
     } catch (error) {
-      console.error("Erro ao agendar notificação:", error);
+      console.error(
+        "❌ [scheduleEventNotification] Erro ao agendar notificação:",
+        error
+      );
     }
   }
 
